@@ -3,6 +3,7 @@
  */
 import { getStats, saveEntry, getAllEntries, deleteEntry } from './db.js';
 import { showToast, uuid, today } from './utils.js';
+import { getUserName } from './user.js';
 
 window.pickColor = function(color) {
   document.body.style.backgroundColor = color === 'lavender' ? '#E8DCFF' : color === 'peach' ? '#FFE0D0' : color === 'blue' ? '#D0E4FF' : '#FFF9F3';
@@ -76,7 +77,7 @@ export async function renderManage() {
       await fetch('https://aryasdiary.netlify.app/.netlify/functions/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: fullContent, category: category }),
+        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', user_name: getUserName() || '未命名', content: fullContent, category: category }),
       });
     } catch (_) {}
     var toast = document.getElementById('toast');

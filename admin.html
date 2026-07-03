@@ -103,7 +103,7 @@ async function loadData() {
       list.innerHTML = data.reverse().map(f => `
         <div class="item">
           <div class="content">${esc(f.content)}</div>
-          <div class="time">${(f.created_at||'').slice(0,10)}</div>
+          <div class="time">${f.user_name ? esc(f.user_name) + ' · ' : ''}${(f.created_at||'').slice(0,10)}</div>
         </div>
       `).join('');
     }

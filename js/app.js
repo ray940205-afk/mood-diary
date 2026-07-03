@@ -9,6 +9,7 @@ import { renderNotes } from './notes.js';
 import { renderManage } from './manage.js';
 import { initDreamEntry, saveDream, interpretDreamNow } from './dream-entry.js';
 import { showToast, uuid, today } from './utils.js';
+import { hasUserName, setUserName, getUserName } from './user.js';
 
 export let currentRole = 'self';
 
@@ -68,6 +69,17 @@ async function checkVersion() {
 }
 
 async function bootstrap() {
+  // 首次使用：设置昵称
+  if (!hasUserName()) {
+    var name = prompt('欢迎来到 Arya\'s Diary 🌙\n\n请为自己起一个名字：', '');
+    if (name && name.trim()) {
+      setUserName(name.trim());
+      showToast('你好，' + name.trim() + ' 💚');
+    } else {
+      setUserName('匿名用户');
+    }
+  }
+
   try {
     restoreThemeColor();
     await initDB();
