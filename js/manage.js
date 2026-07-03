@@ -3,7 +3,8 @@
  */
 import { getStats, saveEntry, getAllEntries } from './db.js';
 import { showToast, uuid, today } from './utils.js';
-import { sendFeedback } from './supabase.js';
+// Supabase 在中国大陆不可用，反馈仅保存在本地
+// import { sendFeedback } from './supabase.js';
 
 // 全局主题切换函数（供 onclick 调用）
 window.pickColor = function(color) {
@@ -130,7 +131,8 @@ export async function renderManage() {
       id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(),
       content: text,
     });
-    sendFeedback(text); showToast('感谢反馈 💚');
+    // sendFeedback(text); // 云端不可用
+    showToast('感谢反馈 💚');
     document.getElementById('feedback-text').value = '';
     renderFeedbackList();
   });

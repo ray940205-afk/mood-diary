@@ -63,8 +63,8 @@ export function saveEntry(entry) {
     const store = tx.objectStore(STORE_NAME);
     const request = store.put(entry);
     request.onsuccess = async () => {
-      // 异步同步到云端（不阻塞本地保存）
-      try { const m = await import('./supabase.js'); m.syncEntry(entry); } catch (_) {}
+      // 云端同步暂不可用（中国大陆网络限制）
+      // try { const m = await import('./supabase.js'); m.syncEntry(entry); } catch (_) {}
       resolve(entry);
     };
     request.onerror = (event) => reject(event.target.error);

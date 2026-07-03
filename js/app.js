@@ -3,7 +3,8 @@
  */
 import { initDB, getStats, saveEntry } from './db.js';
 import { QUOTES } from './quotes.js';
-import { trackVisit } from './supabase.js';
+// Supabase 在中国大陆不可用，云端同步暂时关闭
+// import { trackVisit } from './supabase.js';
 
 /** 获取一条未读过的语录，全部读过则重置 */
 function freshQuote() {
@@ -53,7 +54,7 @@ let currentQuote = null;
 async function bootstrap() {
   // 恢复保存的主题颜色
   restoreThemeColor();
-  trackVisit(); // 上报访问
+  // trackVisit(); // Supabase 暂不可用
   try { await initDB(); } catch (err) { console.error(err); showToast('初始化失败'); return; }
   // 本地环境清除旧 SW，线上注册新 SW
   if ('serviceWorker' in navigator) {
