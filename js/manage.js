@@ -73,7 +73,7 @@ export async function renderManage() {
     var fullContent = catLabel + ' 【' + subjVal + '】' + text;
     await saveEntry({ id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(), content: fullContent, category: category });
     try {
-      await fetch('https://cerulean-cheesecake-665fbb.netlify.app/.netlify/functions/feedback', {
+      await fetch('https://aryasdiary.netlify.app/.netlify/functions/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: fullContent, category: category }),
