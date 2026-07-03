@@ -1,18 +1,18 @@
 const CACHE_NAME = 'mood-diary-v4';
 
 const PRECACHE_URLS = [
-  '/mood-diary/',
-  '/mood-diary/index.html',
-  '/mood-diary/css/style.css',
-  '/mood-diary/js/app.js',
-  '/mood-diary/js/db.js',
-  '/mood-diary/js/guided-entry.js',
-  '/mood-diary/js/free-entry.js',
-  '/mood-diary/js/notes.js',
-  '/mood-diary/js/manage.js',
-  '/mood-diary/js/quotes.js',
-  '/mood-diary/js/knowledge.js',
-  '/mood-diary/js/utils.js'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './js/db.js',
+  './js/guided-entry.js',
+  './js/free-entry.js',
+  './js/notes.js',
+  './js/manage.js',
+  './js/quotes.js',
+  './js/knowledge.js',
+  './js/utils.js'
 ];
 
 self.addEventListener('install', (event) => {
