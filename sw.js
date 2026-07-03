@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mood-diary-v2';
+const CACHE_NAME = 'mood-diary-v3';
 
 const PRECACHE_URLS = [
   '/',
