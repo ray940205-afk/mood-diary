@@ -58,20 +58,17 @@ export async function renderManage() {
 
     <!-- 反馈建议 -->
     <section class="manage-section">
-      <h3 class="manage-section__title" id="feedback-toggle" style="cursor:pointer"><i data-lucide="message-square-heart" class="manage-icon"></i> 反馈建议 <span id="feedback-arrow" style="font-size:12px;color:var(--color-text-muted)">▶</span></h3>
+      <h3 class="manage-section__title" id="feedback-toggle" style="cursor:pointer"><i data-lucide="message-square-heart" class="manage-icon"></i> 击登闻鼓 <span id="feedback-arrow" style="font-size:12px;color:var(--color-text-muted)">▶</span></h3>
       <div id="feedback-form" style="display:none">
         <select id="feedback-category" class="form-input" style="margin-bottom:8px">
           <option value="suggestion">💡 建议</option>
           <option value="bug">🐛 Bug反馈</option>
           <option value="other">💬 其他</option>
         </select>
-        <input type="text" id="feedback-subject" class="form-input" placeholder="反馈主题（如：希望增加暗色模式）" maxlength="50" style="margin-bottom:8px">
-        <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="具体反馈内容～"></textarea>
-        <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
-      </div>
-      <div id="feedback-list" style="margin-top:16px">
-        <button class="btn btn--outline btn--sm btn--full" id="btn-toggle-history" style="display:none">查看历史反馈</button>
-        <div id="feedback-items" style="display:none;margin-top:8px"></div>
+        <input type="text" id="feedback-subject" class="form-input" placeholder="击鼓主题" maxlength="50" style="margin-bottom:8px">
+        <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="诉说你的想法～"></textarea>
+        <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">击鼓鸣冤</button>
+        <div id="feedback-items" style="margin-top:16px"></div>
       </div>
     </section>
 
@@ -133,14 +130,17 @@ export async function renderManage() {
     showToast('主题颜色已更新 🎨');
   });
 
-  // 展开/收起反馈表单
-  document.getElementById('feedback-toggle')?.addEventListener('click', () => {
+  // 击登闻鼓 - 展开同时加载历史反馈
+  document.getElementById('feedback-toggle')?.addEventListener('click', async () => {
     const form = document.getElementById('feedback-form');
     const arrow = document.getElementById('feedback-arrow');
     const isOpen = form.style.display === 'block';
     form.style.display = isOpen ? 'none' : 'block';
     arrow.textContent = isOpen ? '▶' : '▼';
-    if (!isOpen) document.getElementById('feedback-subject')?.focus();
+    if (!isOpen) {
+      document.getElementById('feedback-subject')?.focus();
+      renderFeedbackList(); // 展开时加载历史
+    }
   });
 
   // 提交反馈
@@ -180,23 +180,17 @@ export async function renderManage() {
 }
 
 async function renderFeedbackList() {
-  const toggleBtn = document.getElementById('btn-toggle-history');
   const itemsContainer = document.getElementById('feedback-items');
-  if (!toggleBtn || !itemsContainer) return;
+  if (!itemsContainer) return;
 
   const all = await getAllEntries();
   const feedbacks = all.filter(e => e.type === 'feedback').sort((a, b) => b.createdAt - a.createdAt);
 
-  if (feedbacks.length === 0) {
-    toggleBtn.style.display = 'none';
-    itemsContainer.style.display = 'none';
-    return;
-  }
+  if (feedbacks.length === 0) { itemsContainer.innerHTML = ''; return; }
 
-  toggleBtn.style.display = '';
-  toggleBtn.textContent = `历史反馈 (${feedbacks.length}条) ▶`;
-
-  itemsContainer.innerHTML = feedbacks.map((f, i) => {
+  itemsContainer.innerHTML = `
+    <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:8px;padding-top:8px;border-top:1px solid var(--color-border-light)">堂前鼓声 (${feedbacks.length})</div>
+    ${feedbacks.map((f, i) => {
     const subject = f.content.slice(0, 20) + (f.content.length > 20 ? '...' : '');
     return `
       <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px">
@@ -253,10 +247,4 @@ async function renderFeedbackList() {
     });
   });
 
-  // 总开关
-  toggleBtn.onclick = () => {
-    const isOpen = itemsContainer.style.display === 'block';
-    itemsContainer.style.display = isOpen ? 'none' : 'block';
-    toggleBtn.textContent = `历史反馈 (${feedbacks.length}条) ${isOpen ? '▶' : '▼'}`;
-  };
 }
