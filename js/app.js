@@ -3,32 +3,6 @@
  */
 import { initDB, getStats, saveEntry } from './db.js';
 import { QUOTES } from './quotes.js';
-// Supabase 在中国大陆不可用，云端同步暂时关闭
-// import { trackVisit } from './supabase.js';
-
-/** 获取一条未读过的语录，全部读过则重置 */
-function freshQuote() {
-  const key = 'mood-diary-seen-quotes';
-  let seen = [];
-  try { seen = JSON.parse(localStorage.getItem(key)) || []; } catch (_) {}
-
-  // 筛出未读的
-  const unseen = QUOTES.filter((_, i) => !seen.includes(i));
-  if (unseen.length === 0) {
-    // 全部读过，重置
-    seen = [];
-  }
-
-  const pool = unseen.length > 0 ? unseen : QUOTES;
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-  const idx = QUOTES.indexOf(pick);
-
-  // 标记为已读
-  seen.push(idx);
-  localStorage.setItem(key, JSON.stringify(seen));
-
-  return pick;
-}
 import { initGuidedEntry, nextStep, prevStep } from './guided-entry.js';
 import { initFreeEntry, saveFreeEntry } from './free-entry.js';
 import { renderNotes } from './notes.js';
@@ -37,6 +11,21 @@ import { initDreamEntry, saveDream, interpretDreamNow } from './dream-entry.js';
 import { showToast, uuid, today } from './utils.js';
 
 export let currentRole = 'self';
+
+/** 获取一条未读过的语录，全部读过则重置 */
+function freshQuote() {
+  const key = 'mood-diary-seen-quotes';
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(key)) || []; } catch (_) {}
+  const unseen = QUOTES.filter((_, i) => !seen.includes(i));
+  if (unseen.length === 0) { seen = []; }
+  const pool = unseen.length > 0 ? unseen : QUOTES;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const idx = QUOTES.indexOf(pick);
+  seen.push(idx);
+  localStorage.setItem(key, JSON.stringify(seen));
+  return pick;
+}
 
 const ROUTES = {
   home:       { view: 'view-home',       nav: 'home',   init: renderHome },
@@ -52,19 +41,23 @@ let currentRoute = 'home';
 let currentQuote = null;
 
 async function bootstrap() {
-  // 恢复保存的主题颜色
-  restoreThemeColor();
-  // trackVisit(); // Supabase 暂不可用
-  try { await initDB(); } catch (err) { console.error(err); showToast('初始化失败'); return; }
-  // 本地环境清除旧 SW，线上注册新 SW
+  try {
+    restoreThemeColor();
+    await initDB();
+  } catch (err) {
+    console.error('初始化失败:', err);
+    return;
+  }
+
   if ('serviceWorker' in navigator) {
     if (location.hostname === 'localhost') {
       const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) { await reg.unregister(); console.log('SW unregistered for dev'); }
+      if (reg) { await reg.unregister(); }
     } else {
       try { await navigator.serviceWorker.register('/mood-diary/sw.js'); } catch (_) {}
     }
   }
+
   window.addEventListener('hashchange', handleRoute);
   bindGlobalEvents();
   navigateTo(window.location.hash.replace('#', '') || 'home');
@@ -105,9 +98,9 @@ function bindGlobalEvents() {
   document.getElementById('btn-next')?.addEventListener('click', nextStep);
   document.getElementById('btn-prev')?.addEventListener('click', prevStep);
   document.getElementById('btn-unsure')?.addEventListener('click', showUnsurePopup);
+  document.getElementById('free-form')?.addEventListener('submit', (e) => { e.preventDefault(); saveFreeEntry(); });
   document.getElementById('btn-save-dream')?.addEventListener('click', saveDream);
   document.getElementById('btn-interpret-dream')?.addEventListener('click', interpretDreamNow);
-  document.getElementById('free-form')?.addEventListener('submit', (e) => { e.preventDefault(); saveFreeEntry(); });
 }
 
 // ====== 首页 ======
@@ -120,7 +113,7 @@ function renderHome() {
     try {
       await saveEntry({
         id: uuid(), type: 'quote', role: 'self', date: today(), createdAt: Date.now(),
-        content: `"${currentQuote.text}" —— ${currentQuote.author} ${currentQuote.source}`,
+        content: `"${currentQuote.text}" —— ${currentQuote.author}，${currentQuote.source}`,
         isFavorite: true, mood: 'good',
       });
       showToast('已收藏 👍');
@@ -130,22 +123,17 @@ function renderHome() {
     try {
       await saveEntry({
         id: uuid(), type: 'quote', role: 'self', date: today(), createdAt: Date.now(),
-        content: `"${currentQuote.text}" —— ${currentQuote.author} ${currentQuote.source}`,
+        content: `"${currentQuote.text}" —— ${currentQuote.author}，${currentQuote.source}`,
         isFavorite: true, mood: 'bad',
       });
-      // 将语录存储，供随记引用
-      window.__quoteForFree = `"${currentQuote.text}" —— ${currentQuote.author} ${currentQuote.source}`;
-      // 弹出确认提示
+      window.__quoteForFree = `"${currentQuote.text}" —— ${currentQuote.author}，${currentQuote.source}`;
       const goWrite = confirm('看来你对此有不同看法？写下你的想法吧～');
-      if (goWrite) {
-        currentRole = 'self';
-        navigateTo('free-entry');
-      }
+      if (goWrite) { currentRole = 'self'; navigateTo('free-entry'); }
     } catch (err) { showToast('操作失败'); }
   };
 }
 
-// ====== 记录页（原首页内容） ======
+// ====== 记录页 ======
 async function renderRecord() {
   try {
     const [selfStats, familyStats] = await Promise.all([getStats('self'), getStats('family')]);
@@ -165,18 +153,14 @@ async function renderRecord() {
   } catch (err) { console.error(err); }
 }
 
-/** 恢复保存的主题颜色 */
+// ====== 主题 ======
 function restoreThemeColor() {
   const saved = localStorage.getItem('mood-diary-theme-color');
   if (!saved) return;
-  if (window.pickColor) {
-    window.pickColor(saved);
-  } else {
-    document.body.setAttribute('data-theme', saved);
-  }
+  document.body.setAttribute('data-theme', saved);
 }
 
-/** 没想好弹窗 */
+// ====== 弹窗 ======
 function showUnsurePopup() {
   const overlay = document.createElement('div');
   overlay.className = 'popup-overlay';
@@ -188,10 +172,10 @@ function showUnsurePopup() {
     </div>
   `;
   document.body.appendChild(overlay);
-
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   overlay.querySelector('#popup-back').onclick = () => overlay.remove();
   overlay.querySelector('#popup-free').onclick = () => { overlay.remove(); currentRole = 'self'; navigateTo('free-entry'); };
 }
 
+// ====== 启动 ======
 document.addEventListener('DOMContentLoaded', bootstrap);
