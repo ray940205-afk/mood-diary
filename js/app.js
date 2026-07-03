@@ -179,3 +179,10 @@ function showUnsurePopup() {
 
 // ====== 启动 ======
 document.addEventListener('DOMContentLoaded', bootstrap);
+
+// Lucide CDN慢，异步加载后重试渲染图标
+let _lucideRetries = 0;
+const _lucideCheck = setInterval(() => {
+  if (window.lucide) { lucide.createIcons(); clearInterval(_lucideCheck); }
+  if (++_lucideRetries > 60) clearInterval(_lucideCheck); // 最多等30秒
+}, 500);
