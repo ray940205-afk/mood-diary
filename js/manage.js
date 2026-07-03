@@ -152,14 +152,37 @@ async function renderFeedbackList() {
   if (!container) return;
   const all = await getAllEntries();
   const feedbacks = all.filter(e => e.type === 'feedback').sort((a, b) => b.createdAt - a.createdAt);
-  if (feedbacks.length === 0) return;
+  if (feedbacks.length === 0) { container.innerHTML = ''; return; }
   container.innerHTML = `
     <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:8px">历史反馈 (${feedbacks.length}条)</div>
-    ${feedbacks.map(f => `
-      <div style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px;font-size:var(--font-size-sm);color:var(--color-text-secondary);display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <span style="flex:1;line-height:1.6">${f.content}</span>
-        <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);white-space:nowrap;flex-shrink:0">${f.date}</span>
-      </div>
-    `).join('')}
+    ${feedbacks.map((f, i) => {
+      const subject = f.content.slice(0, 20) + (f.content.length > 20 ? '...' : '');
+      return `
+        <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px;cursor:pointer">
+          <div class="feedback-item__header" data-idx="${i}" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);white-space:nowrap">${f.date}</span>
+            <span style="flex:1;font-size:var(--font-size-sm);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subject}</span>
+            <span class="feedback-arrow" data-idx="${i}" style="font-size:10px;color:var(--color-text-muted);transition:transform 0.2s">▶</span>
+          </div>
+          <div class="feedback-item__body" data-idx="${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border-light);font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:1.7;white-space:pre-wrap">${f.content}</div>
+        </div>
+      `;
+    }).join('')}
   `;
+
+  // 点击展开/收起
+  container.querySelectorAll('.feedback-item__header, .feedback-arrow').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = el.dataset.idx;
+      const body = container.querySelector(`.feedback-item__body[data-idx="${idx}"]`);
+      const arrow = container.querySelector(`.feedback-arrow[data-idx="${idx}"]`);
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+      } else {
+        body.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
+  });
 }
