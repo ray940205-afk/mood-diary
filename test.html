@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<h1>测试页面</h1>
+<p id="status">加载中...</p>
+<script type="module">
+document.getElementById('status').textContent = 'JS模块正常加载!';
+import('./js/app.js').then(() => {
+  document.getElementById('status').textContent += ' app.js加载成功!';
+}).catch(e => {
+  document.getElementById('status').textContent = '错误: ' + e.message;
+});
+</script>
+</body></html>
