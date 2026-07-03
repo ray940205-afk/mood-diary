@@ -61,7 +61,7 @@ async function bootstrap() {
       const reg = await navigator.serviceWorker.getRegistration();
       if (reg) { await reg.unregister(); console.log('SW unregistered for dev'); }
     } else {
-      try { await navigator.serviceWorker.register('/sw.js'); } catch (_) {}
+      try { await navigator.serviceWorker.register('/mood-diary/sw.js'); } catch (_) {}
     }
   }
   window.addEventListener('hashchange', handleRoute);
