@@ -40,6 +40,33 @@ const ROUTES = {
 let currentRoute = 'home';
 let currentQuote = null;
 
+/** 检测新版本 */
+async function checkVersion() {
+  try {
+    var resp = await fetch('./version.json?t=' + Date.now());
+    var data = await resp.json();
+    var current = localStorage.getItem('mood-diary-version');
+    if (current && current !== data.version) {
+      // 发现新版本
+      var ok = confirm('✨ 发现新版本 (v' + data.version + ')，点击确定刷新页面获取最新功能～');
+      if (ok) {
+        localStorage.setItem('mood-diary-version', data.version);
+        // 注销旧SW，强制刷新
+        if ('serviceWorker' in navigator) {
+          var reg = await navigator.serviceWorker.getRegistration();
+          if (reg) await reg.unregister();
+        }
+        if ('caches' in window) {
+          var keys = await caches.keys();
+          await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+        }
+        location.reload(true);
+      }
+    }
+    if (!current) localStorage.setItem('mood-diary-version', data.version);
+  } catch (_) {}
+}
+
 async function bootstrap() {
   try {
     restoreThemeColor();
@@ -48,6 +75,8 @@ async function bootstrap() {
     console.error('初始化失败:', err);
     return;
   }
+
+  await checkVersion();
 
   if ('serviceWorker' in navigator) {
     if (location.hostname === 'localhost') {
