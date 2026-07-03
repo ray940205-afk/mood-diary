@@ -6,14 +6,8 @@
   <title>情绪日记 - 管理后台</title>
   <style>
     :root {
-      --bg: #f5f5f5;
-      --card: #fff;
-      --primary: #7BAE7A;
-      --text: #333;
-      --text2: #888;
-      --border: #eee;
-      --radius: 14px;
-      --shadow: 0 1px 6px rgba(0,0,0,0.06);
+      --bg: #f5f5f5; --card: #fff; --primary: #7BAE7A; --text: #333;
+      --text2: #888; --border: #eee; --radius: 14px; --shadow: 0 1px 6px rgba(0,0,0,0.06);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -24,34 +18,24 @@
     .login-card input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 16px; text-align: center; margin-bottom: 12px; }
     .login-card button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: #fff; font-size: 16px; cursor: pointer; }
     .login-card .error { color: #e06060; font-size: 13px; margin-top: 8px; }
-    .dashboard { display: none; max-width: 900px; margin: 0 auto; padding: 24px; }
+    .dashboard { display: none; max-width: 700px; margin: 0 auto; padding: 24px; }
     .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .dash-header h1 { font-size: 22px; font-weight: 500; }
     .dash-header button { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; font-size: 13px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .stat-card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); text-align: center; }
-    .stat-card .num { font-size: 32px; font-weight: 600; color: var(--primary); }
+    .stat-card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); text-align: center; margin-bottom: 16px; }
+    .stat-card .num { font-size: 28px; font-weight: 600; color: var(--primary); }
     .stat-card .label { font-size: 13px; color: var(--text2); margin-top: 4px; }
     .section { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
-    .section h2 { font-size: 16px; font-weight: 500; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .section table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .section th, .section td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
-    .section th { color: var(--text2); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .section td { color: var(--text); }
-    .mood-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-    .mood-dot.good { background: #7BAE7A; }
-    .mood-dot.neutral { background: #D4A853; }
-    .mood-dot.bad { background: #D4796E; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
-    .badge-green { background: #EDF7ED; color: #609F5F; }
-    .badge-orange { background: #FFF8E1; color: #B8860B; }
-    .badge-red { background: #FDEAEA; color: #C06060; }
-    .loading { text-align: center; padding: 40px; color: var(--text2); }
+    .section h2 { font-size: 16px; font-weight: 500; margin-bottom: 16px; }
+    .section .item { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .section .item:last-child { border-bottom: none; }
+    .section .item .content { flex: 1; font-size: 14px; line-height: 1.6; }
+    .section .item .time { font-size: 11px; color: var(--text2); white-space: nowrap; }
+    .empty { text-align: center; color: var(--text2); padding: 20px; font-size: 14px; }
   </style>
 </head>
 <body>
 
-<!-- 登录 -->
 <div class="login" id="login-screen">
   <div class="login-card">
     <h1>🌙 情绪日记</h1>
@@ -62,41 +46,24 @@
   </div>
 </div>
 
-<!-- 仪表盘 -->
 <div class="dashboard" id="dashboard">
   <div class="dash-header">
-    <h1>📊 管理后台</h1>
-    <button onclick="logout()">退出</button>
+    <h1>📊 用户反馈</h1>
+    <div style="display:flex;gap:8px">
+      <button onclick="refresh()">刷新</button>
+      <button onclick="logout()">退出</button>
+    </div>
   </div>
-
-  <div class="stats-grid">
-    <div class="stat-card"><div class="num" id="stat-users">-</div><div class="label">总访问用户</div></div>
-    <div class="stat-card"><div class="num" id="stat-active">-</div><div class="label">今日活跃</div></div>
-    <div class="stat-card"><div class="num" id="stat-entries">-</div><div class="label">总记录数</div></div>
-    <div class="stat-card"><div class="num" id="stat-feedback">-</div><div class="label">反馈数</div></div>
-  </div>
-
+  <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">反馈总数</div></div>
   <div class="section">
-    <h2>📝 最新反馈</h2>
-    <div id="feedback-table">加载中...</div>
-  </div>
-
-  <div class="section">
-    <h2>📈 最近活动</h2>
-    <div id="activity-table">加载中...</div>
-  </div>
-
-  <div class="section">
-    <h2>😊 心情分布（近7天）</h2>
-    <div id="mood-stats">加载中...</div>
+    <h2>📝 所有反馈</h2>
+    <div id="feedback-list"><div class="empty">加载中...</div></div>
   </div>
 </div>
 
-<script type="module">
-// ══════ Supabase 配置 ══════
-// 替换为你的 Supabase 项目信息
-const SUPABASE_URL = 'https://xraoohpkytbwguhwhrbl.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyYW9vaHBreXRid2d1aHdocmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNjA4NDMsImV4cCI6MjA5ODYzNjg0M30.wAbiZjjrw43dQt7vf5DCRSqW-KZht3qv_lfVV-CKvI8';
+<script>
+// ══════ 配置 ══════
+const API_URL = 'https://mood-diary-app.vercel.app/api/feedback';
 const ADMIN_PASSWORD = 'ray171215.';
 
 // ══════ 登录 ══════
@@ -106,94 +73,46 @@ window.login = function() {
     sessionStorage.setItem('admin-auth', '1');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    loadDashboard();
+    loadData();
   } else {
     document.getElementById('login-error').textContent = '密码错误';
   }
 };
 
-window.logout = function() {
-  sessionStorage.removeItem('admin-auth');
-  location.reload();
-};
+window.logout = function() { sessionStorage.removeItem('admin-auth'); location.reload(); };
+window.refresh = function() { loadData(); };
 
-// 自动登录
 if (sessionStorage.getItem('admin-auth') === '1') {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
+  loadData();
 }
 
-// ══════ Supabase 客户端 ══════
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabase = SUPABASE_URL.includes('YOUR_') ? null : createClient(SUPABASE_URL, SUPABASE_KEY);
-
 // ══════ 加载数据 ══════
-async function loadDashboard() {
-  if (!supabase) {
-    document.getElementById('feedback-table').innerHTML = '<p class="loading">请先配置 Supabase（见 admin.html 顶部注释）</p>';
-    return;
-  }
-
+async function loadData() {
+  const list = document.getElementById('feedback-list');
+  list.innerHTML = '<div class="empty">加载中...</div>';
   try {
-    // 总用户数
-    const { count: users } = await supabase.from('visitors').select('*', { count: 'exact', head: true });
-    document.getElementById('stat-users').textContent = users || 0;
-
-    // 今日活跃
-    const today = new Date().toISOString().slice(0, 10);
-    const { count: active } = await supabase.from('visitors').select('*', { count: 'exact', head: true }).gte('last_seen', today);
-    document.getElementById('stat-active').textContent = active || 0;
-
-    // 总记录数
-    const { count: entries } = await supabase.from('entries').select('*', { count: 'exact', head: true });
-    document.getElementById('stat-entries').textContent = entries || 0;
-
-    // 反馈数
-    const { count: feedback } = await supabase.from('feedback').select('*', { count: 'exact', head: true });
-    document.getElementById('stat-feedback').textContent = feedback || 0;
-
-    // 最新反馈
-    const { data: fb } = await supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(20);
-    document.getElementById('feedback-table').innerHTML = fb && fb.length ? `
-      <table><thead><tr><th>日期</th><th>内容</th></tr></thead><tbody>
-      ${fb.map(f => `<tr><td style="white-space:nowrap;font-size:12px;color:var(--text2)">${f.created_at?.slice(0,10)}</td><td>${esc(f.content)}</td></tr>`).join('')}
-      </tbody></table>` : '<p style="color:var(--text2);font-size:13px">暂无反馈</p>';
-
-    // 最近活动
-    const { data: act } = await supabase.from('entries').select('*').order('created_at', { ascending: false }).limit(20);
-    document.getElementById('activity-table').innerHTML = act && act.length ? `
-      <table><thead><tr><th>时间</th><th>类型</th><th>心情</th><th>摘要</th></tr></thead><tbody>
-      ${act.map(a => {
-        const moodIcon = a.mood === 'good' ? '😊' : a.mood === 'neutral' ? '😌' : a.mood === 'bad' ? '🥲' : '';
-        const typeLabel = a.type === 'guided' ? '你问我答' : a.type === 'free' ? '随记' : a.type === 'dream' ? '梦境' : a.type;
-        return `<tr><td style="white-space:nowrap;font-size:12px;color:var(--text2)">${a.created_at?.slice(0,16)||''}</td><td>${typeLabel}</td><td>${moodIcon}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((a.content||'').slice(0,40))}</td></tr>`;
-      }).join('')}
-      </tbody></table>` : '<p style="color:var(--text2);font-size:13px">暂无活动</p>';
-
-    // 心情分布
-    const weekAgo = new Date(Date.now() - 7*86400000).toISOString();
-    const { data: moods } = await supabase.from('entries').select('mood').gte('created_at', weekAgo);
-    const good = moods?.filter(m => m.mood === 'good').length || 0;
-    const neutral = moods?.filter(m => m.mood === 'neutral').length || 0;
-    const bad = moods?.filter(m => m.mood === 'bad').length || 0;
-    const total = good + neutral + bad || 1;
-    document.getElementById('mood-stats').innerHTML = `
-      <div style="display:flex;gap:12px;align-items:center;padding:8px 0">
-        <div style="flex:1;text-align:center"><span class="mood-dot good" style="display:inline-block;width:12px;height:12px"></span><br><strong>${good}</strong><br><span style="font-size:12px;color:var(--text2)">Nice Mood</span><br><span style="font-size:12px;color:var(--text2)">${Math.round(good/total*100)}%</span></div>
-        <div style="flex:1;text-align:center"><span class="mood-dot neutral" style="display:inline-block;width:12px;height:12px"></span><br><strong>${neutral}</strong><br><span style="font-size:12px;color:var(--text2)">Peace</span><br><span style="font-size:12px;color:var(--text2)">${Math.round(neutral/total*100)}%</span></div>
-        <div style="flex:1;text-align:center"><span class="mood-dot bad" style="display:inline-block;width:12px;height:12px"></span><br><strong>${bad}</strong><br><span style="font-size:12px;color:var(--text2)">Bad Mood</span><br><span style="font-size:12px;color:var(--text2)">${Math.round(bad/total*100)}%</span></div>
-      </div>`;
-  } catch(err) {
-    console.error(err);
-    document.getElementById('feedback-table').innerHTML = '<p style="color:#e06060">加载失败，请检查 Supabase 配置</p>';
+    const res = await fetch(API_URL + '?pw=' + ADMIN_PASSWORD);
+    if (res.status === 401) { list.innerHTML = '<div class="empty">密码错误</div>'; return; }
+    const data = await res.json();
+    document.getElementById('stat-total').textContent = data.length;
+    if (data.length === 0) {
+      list.innerHTML = '<div class="empty">暂无反馈</div>';
+    } else {
+      list.innerHTML = data.reverse().map(f => `
+        <div class="item">
+          <div class="content">${esc(f.content)}</div>
+          <div class="time">${(f.created_at||'').slice(0,10)}</div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    list.innerHTML = '<div class="empty" style="color:#e06060">连接失败，请确认 Vercel 已部署</div>';
   }
 }
 
 function esc(s) { return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
-
-// 页面加载时自动登录
-if (sessionStorage.getItem('admin-auth') === '1') loadDashboard();
 </script>
 </body>
 </html>

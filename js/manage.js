@@ -132,7 +132,14 @@ export async function renderManage() {
       id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(),
       content: text,
     });
-    // sendFeedback(text); // 云端不可用
+    // 发送到 Vercel API
+    try {
+      await fetch('https://mood-diary-app.vercel.app/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: text }),
+      });
+    } catch (_) {}
     showToast('感谢反馈 💚');
     document.getElementById('feedback-text').value = '';
     renderFeedbackList();
