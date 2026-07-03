@@ -1,7 +1,7 @@
 /**
  * 管理笔记 —— 统计 + 主题 + 反馈
  */
-import { getStats, saveEntry, getAllEntries } from './db.js';
+import { getStats, saveEntry, getAllEntries, deleteEntry } from './db.js';
 import { showToast, uuid, today } from './utils.js';
 // Supabase 在中国大陆不可用，反馈仅保存在本地
 // import { sendFeedback } from './supabase.js';
@@ -60,6 +60,11 @@ export async function renderManage() {
     <section class="manage-section">
       <h3 class="manage-section__title" id="feedback-toggle" style="cursor:pointer"><i data-lucide="message-square-heart" class="manage-icon"></i> 反馈建议 <span id="feedback-arrow" style="font-size:12px;color:var(--color-text-muted)">▶</span></h3>
       <div id="feedback-form" style="display:none">
+        <select id="feedback-category" class="form-input" style="margin-bottom:8px">
+          <option value="suggestion">💡 建议</option>
+          <option value="bug">🐛 Bug反馈</option>
+          <option value="other">💬 其他</option>
+        </select>
         <input type="text" id="feedback-subject" class="form-input" placeholder="反馈主题（如：希望增加暗色模式）" maxlength="50" style="margin-bottom:8px">
         <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="具体反馈内容～"></textarea>
         <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
@@ -140,24 +145,33 @@ export async function renderManage() {
 
   // 提交反馈
   document.getElementById('btn-feedback')?.addEventListener('click', async () => {
+    const category = document.getElementById('feedback-category')?.value || 'other';
+    const catLabel = { suggestion: '💡 建议', bug: '🐛 Bug', other: '💬 其他' }[category];
     const subject = document.getElementById('feedback-subject')?.value.trim() || '未填写主题';
     const text = document.getElementById('feedback-text')?.value.trim();
     if (!text) { showToast('请填写反馈内容'); return; }
-    const fullContent = `【${subject}】${text}`;
+    const fullContent = `${catLabel} 【${subject}】${text}`;
     await saveEntry({
       id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(),
-      content: fullContent,
+      content: fullContent, category,
     });
     try {
       await fetch('https://cerulean-cheesecake-665fbb.netlify.app/.netlify/functions/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: fullContent }),
+        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: fullContent, category }),
       });
     } catch (_) {}
-    showToast('感谢反馈 💚');
+    // 自定义感谢文案
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = '感谢您的反馈，我将用心聆听 💚';
+      toast.classList.add('toast--show');
+      setTimeout(() => toast.classList.remove('toast--show'), 3000);
+    }
     document.getElementById('feedback-subject').value = '';
     document.getElementById('feedback-text').value = '';
+    document.getElementById('feedback-category').value = 'suggestion';
     renderFeedbackList();
   });
 
@@ -185,16 +199,43 @@ async function renderFeedbackList() {
   itemsContainer.innerHTML = feedbacks.map((f, i) => {
     const subject = f.content.slice(0, 20) + (f.content.length > 20 ? '...' : '');
     return `
-      <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px;cursor:pointer">
-        <div class="feedback-item__header" data-idx="${i}" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px">
+        <div class="feedback-item__header" data-idx="${i}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer">
           <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);white-space:nowrap">${f.date}</span>
           <span style="flex:1;font-size:var(--font-size-sm);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subject}</span>
           <span class="feedback-arrow" data-idx="${i}" style="font-size:10px;color:var(--color-text-muted);transition:transform 0.2s">▶</span>
         </div>
         <div class="feedback-item__body" data-idx="${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border-light);font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:1.7;white-space:pre-wrap">${f.content}</div>
+        <button class="btn btn--danger btn--sm feedback-del-btn" data-id="${f.id}" style="margin-top:6px;display:none">删除</button>
       </div>
     `;
   }).join('');
+
+  // 展开时显示删除按钮
+  itemsContainer.querySelectorAll('.feedback-item__header').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = el.dataset.idx;
+      const item = el.closest('.feedback-item');
+      const body = item.querySelector('.feedback-item__body');
+      const arrow = item.querySelector('.feedback-arrow');
+      const delBtn = item.querySelector('.feedback-del-btn');
+      const isOpen = body.style.display === 'block';
+      body.style.display = isOpen ? 'none' : 'block';
+      delBtn.style.display = isOpen ? 'none' : 'block';
+      arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    });
+  });
+
+  // 删除反馈
+  itemsContainer.querySelectorAll('.feedback-del-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('确定删除这条反馈吗？')) return;
+      await deleteEntry(btn.dataset.id);
+      showToast('已删除');
+      renderFeedbackList();
+    });
+  });
 
   // 单条展开
   itemsContainer.querySelectorAll('.feedback-item__header, .feedback-arrow').forEach(el => {
