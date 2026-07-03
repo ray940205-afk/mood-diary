@@ -1,0 +1,22 @@
+{
+  "name": "情绪日记",
+  "short_name": "情绪日记",
+  "description": "记录情绪与应对策略，更好地理解和支持你所爱的人",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#5B8C5A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

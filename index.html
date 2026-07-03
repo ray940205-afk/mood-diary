@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#7BAE7A">
+  <meta name="description" content="记录情绪与应对方式，更好地理解自己和关心的人">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="情绪日记">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <title>情绪日记</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ====== 1. 首页 ====== -->
+    <main id="view-home" class="view">
+      <div class="quote-page">
+        <div class="quote-card" id="quote-card">
+          <blockquote class="quote-text" id="quote-text"></blockquote>
+          <cite class="quote-author" id="quote-author"></cite>
+        </div>
+        <div class="quote-actions" id="quote-actions">
+          <button class="mini-btn" id="btn-like" title="点赞"><i data-lucide="heart" class="icon--like"></i></button>
+          <button class="mini-btn" id="btn-dislike" title="踩"><i data-lucide="thumbs-down" class="icon--dislike"></i></button>
+        </div>
+        <button class="ghost-btn" data-nav="record">去记录此刻情绪 <i data-lucide="chevron-right" class="icon--sm"></i></button>
+      </div>
+    </main>
+
+    <!-- ====== 2. 记录情绪 ====== -->
+    <main id="view-record" class="view view--hidden">
+      <div class="home-header">
+        <h1 class="home-title">情绪日记</h1>
+        <p class="home-subtitle">记录、理解、成长<br>你并不孤单 ❤️ 💙</p>
+      </div>
+      <section class="home-section">
+        <div class="home-section__header">
+          <i data-lucide="flower2" class="section-icon"></i>
+          <span class="home-section__title">我的情绪</span>
+        </div>
+        <div class="home-section__actions">
+          <button class="entry-btn entry-btn--guided" data-role="self" data-nav="guided-entry">
+            <i data-lucide="message-circle" class="entry-btn__icon-svg"></i>
+            <span class="entry-btn__title">你问我答</span>
+            <span class="entry-btn__desc">一步步梳理感受和方法</span>
+          </button>
+          <button class="entry-btn entry-btn--free" data-role="self" data-nav="free-entry">
+            <i data-lucide="pen-line" class="entry-btn__icon-svg"></i>
+            <span class="entry-btn__title">随记</span>
+            <span class="entry-btn__desc">随心记录当下的心情</span>
+          </button>
+        </div>
+      </section>
+      <section class="home-section">
+        <div class="home-section__header">
+          <i data-lucide="heart-handshake" class="section-icon"></i>
+          <span class="home-section__title">我和TA的情绪</span>
+        </div>
+        <div class="home-section__actions">
+          <button class="entry-btn entry-btn--guided" data-role="family" data-nav="guided-entry">
+            <i data-lucide="message-circle" class="entry-btn__icon-svg"></i>
+            <span class="entry-btn__title">你问我答</span>
+            <span class="entry-btn__desc">梳理事件、情绪与应对</span>
+          </button>
+          <button class="entry-btn entry-btn--free" data-role="family" data-nav="free-entry">
+            <i data-lucide="pen-line" class="entry-btn__icon-svg"></i>
+            <span class="entry-btn__title">随记</span>
+            <span class="entry-btn__desc">记录陪伴中的观察和感受</span>
+          </button>
+        </div>
+      </section>
+      <div class="home-quick-stats" id="quick-stats"></div>
+    </main>
+
+    <!-- 你问我答 -->
+    <main id="view-guided-entry" class="view view--hidden">
+      <div class="page-header">
+        <button class="btn-back" data-nav="record"><i data-lucide="chevron-left" class="icon--sm"></i> 返回</button>
+        <h2 class="page-title" id="guided-title">你问我答</h2>
+        <div style="width:48px"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text"></div>
+      <div class="wizard-container" id="wizard-container"></div>
+      <div class="wizard-nav" id="wizard-nav">
+        <button class="btn btn--outline" id="btn-prev" style="visibility:hidden">上一步</button>
+        <button class="btn btn--primary" id="btn-next">下一步</button>
+      </div>
+    </main>
+
+    <!-- 随记 -->
+    <main id="view-free-entry" class="view view--hidden">
+      <div class="page-header">
+        <button class="btn-back" data-nav="record"><i data-lucide="chevron-left" class="icon--sm"></i> 返回</button>
+        <h2 class="page-title" id="free-title">随记</h2>
+        <div style="width:48px"></div>
+      </div>
+      <form id="free-form" class="free-form">
+        <div class="form-group"><label class="form-label">日期</label><input type="date" id="free-date" class="form-input" required></div>
+        <div class="form-group"><label class="form-label">标题（可选）</label><input type="text" id="free-title-input" class="form-input"></div>
+        <div class="form-group"><label class="form-label" id="free-content-label">内容</label><textarea id="free-content" class="form-textarea" rows="8"></textarea></div>
+        <!-- 图片预览区 -->
+        <div class="image-previews" id="image-previews"></div>
+        <!-- 插入图片按钮 -->
+        <button type="button" class="btn btn--outline btn--sm" id="btn-add-image" style="margin-bottom:12px"><i data-lucide="image" class="icon--sm"></i> 插入图片</button>
+        <input type="file" id="image-input" accept="image/*" multiple style="display:none">
+        <!-- 情绪标签 -->
+        <details class="tag-section">
+          <summary class="tag-section__summary">🏷️ 插入标签</summary>
+          <div class="form-group"><label class="form-label form-label--sm">点击标签插入到内容中</label><div class="tag-grid" id="free-emotions"></div></div>
+        </details>
+        <button type="submit" class="btn btn--primary btn--full">保存记录</button>
+      </form>
+    </main>
+
+    <!-- ====== 3. 情绪笔记 ====== -->
+    <main id="view-notes" class="view view--hidden">
+      <div class="page-header"><h2 class="page-title">情绪笔记</h2><div style="width:48px"></div></div>
+      <div class="history-toolbar">
+        <div class="filter-row">
+          <select id="filter-month" class="filter-select"></select>
+          <select id="filter-mood" class="filter-select">
+            <option value="all">全部心情</option>
+            <option value="good">😊 Nice Mood</option>
+            <option value="neutral">😌 Peace of Mind</option>
+            <option value="bad">🥲 Bad Mood</option>
+          </select>
+          <select id="filter-type" class="filter-select">
+            <option value="all">全部类型</option>
+            <option value="guided">你问我答</option>
+            <option value="free">随记</option>
+            <option value="quote">收藏语录</option>
+          </select>
+        </div>
+      </div>
+      <div class="entry-list" id="entry-list">
+        <div class="empty-state" id="empty-state">
+          <i data-lucide="book-open" class="empty-icon"></i>
+          <p class="empty-state__text">还没有笔记</p>
+          <p class="empty-state__hint">去记录此刻情绪吧</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ====== 4. 管理笔记 ====== -->
+    <main id="view-manage" class="view view--hidden">
+      <div class="page-header"><h2 class="page-title">管理笔记</h2><div style="width:48px"></div></div>
+      <div class="manage-content" id="manage-content"></div>
+    </main>
+
+    <!-- ====== 底部导航 ====== -->
+    <nav class="bottom-nav">
+      <button class="nav-item nav-item--active" data-nav="home">
+        <i data-lucide="home" class="nav-icon"></i>
+        <span class="nav-item__label">首页</span>
+      </button>
+      <button class="nav-item" data-nav="record">
+        <i data-lucide="pencil" class="nav-icon"></i>
+        <span class="nav-item__label">记录</span>
+      </button>
+      <button class="nav-item" data-nav="notes">
+        <i data-lucide="book-open" class="nav-icon"></i>
+        <span class="nav-item__label">笔记</span>
+      </button>
+      <button class="nav-item" data-nav="manage">
+        <i data-lucide="settings" class="nav-icon"></i>
+        <span class="nav-item__label">管理</span>
+      </button>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
