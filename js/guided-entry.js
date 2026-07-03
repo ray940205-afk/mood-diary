@@ -4,6 +4,7 @@
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
 import { uuid, today, showToast, MOOD_TAGS } from './utils.js';
+import { getUserName } from './user.js';
 
 const PROMPTS = {
   self: {
@@ -87,8 +88,10 @@ function renderMoodStep() {
       '<span class="mood-card__label">' + t.label + '</span>' +
       '</button>';
   }).join('');
+  var name = getUserName() || '';
+  var greeting = name ? name + '，此刻的你是什么样的？' : '此刻的你是什么样的？';
   return '<div class="mood-select">' +
-    '<h3 class="mood-select__title">此刻的你是什么样的？</h3>' +
+    '<h3 class="mood-select__title">' + greeting + '</h3>' +
     '<p class="mood-select__sub">选一个最接近的感受，我会陪你聊一聊</p>' +
     '<div class="mood-select__grid">' + cards + '</div>' +
     '</div>';
@@ -99,10 +102,12 @@ function renderPromptStep(prompts) {
   var emoji = '';
   var found = MOOD_TAGS.find(function(t) { return t.id === data.mood; });
   if (found) emoji = found.emoji;
+  var name = getUserName() || '';
+  var prefix = name ? name + '，' : '';
   var blocks = prompts.map(function(p, i) {
     var val = data['prompt_' + i] || '';
     return '<div class="prompt-block">' +
-      '<div class="prompt-block__q">' + emoji + ' ' + p.q + '</div>' +
+      '<div class="prompt-block__q">' + emoji + ' ' + prefix + p.q + '</div>' +
       '<textarea class="prompt-block__input" id="prompt-' + i + '" placeholder="' + p.hint + '">' + esc(val) + '</textarea>' +
       '</div>';
   }).join('');
