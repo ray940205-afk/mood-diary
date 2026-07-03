@@ -150,45 +150,45 @@ export function getAllEmotionTags() {
 
 // ====== 情绪标签（两个板块共用） ======
 export const EMOTION_TAGS = [
-  { id: 'helpless', label: '无助', emoji: '🥺' },
-  { id: 'anxious', label: '焦虑', emoji: '😟' },
-  { id: 'angry', label: '愤怒', emoji: '😠' },
-  { id: 'exhausted', label: '疲惫', emoji: '😴' },
-  { id: 'calm', label: '平静', emoji: '🙂' },
-  { id: 'understanding', label: '理解', emoji: '🩷' },
-  { id: 'sad', label: '悲伤', emoji: '💧' },
-  { id: 'confused', label: '困惑', emoji: '😶' },
-  { id: 'scared', label: '害怕', emoji: '🙈' },
-  { id: 'hopeful', label: '有希望', emoji: '🌸' },
+  { id: 'helpless', label: '要鼠了', emoji: '🐭' },
+  { id: 'anxious', label: 'CPU烧了', emoji: '🔥' },
+  { id: 'angry', label: '红温了', emoji: '🌡️' },
+  { id: 'exhausted', label: '电量告急', emoji: '🔋' },
+  { id: 'calm', label: '平静', emoji: '🍃' },
+  { id: 'understanding', label: '狠狠懂了', emoji: '💡' },
+  { id: 'sad', label: '破防了', emoji: '💔' },
+  { id: 'confused', label: '我脑子呢', emoji: '🌀' },
+  { id: 'scared', label: '瑟瑟发抖', emoji: '🍂' },
+  { id: 'hopeful', label: '我又行了', emoji: '✨' },
 ];
 
 // ====== 策略标签（分板块） ======
 
 /** 自我调节策略 —— 我的记录 */
 export const SELF_STRATEGY_TAGS = [
-  { id: 'breathe', label: '深呼吸', emoji: '🌬️' },
-  { id: 'distract', label: '转移注意力', emoji: '🎵' },
-  { id: 'talk', label: '找人倾诉', emoji: '🫶' },
-  { id: 'exercise', label: '运动', emoji: '🚶' },
-  { id: 'write', label: '写下来', emoji: '🖊️' },
-  { id: 'accept', label: '接纳当下的感受', emoji: '🌊' },
-  { id: 'recall', label: '用过往有效的方法', emoji: '🔆' },
-  { id: 'professional_self', label: '寻求专业帮助', emoji: '📞' },
-  { id: 'selfcare_self', label: '照顾自己', emoji: '🛀' },
+  { id: 'breathe', label: '深呼吸冷静一下', emoji: '🌬️' },
+  { id: 'distract', label: '刷点别的转移注意', emoji: '📱' },
+  { id: 'talk', label: '找人唠五块钱的', emoji: '🫶' },
+  { id: 'exercise', label: '出去走走散散', emoji: '🚶' },
+  { id: 'write', label: '写下来倒一倒', emoji: '🖊️' },
+  { id: 'accept', label: '算了就这样吧', emoji: '🌊' },
+  { id: 'recall', label: '用上次的方法试试', emoji: '🔆' },
+  { id: 'professional_self', label: '寻找专业支援', emoji: '📞' },
+  { id: 'selfcare_self', label: '先爱一下老己', emoji: '🛀' },
 ];
 
 /** 陪伴支持策略 —— 陪伴记录 */
 export const FAMILY_STRATEGY_TAGS = [
-  { id: 'listen', label: '倾听陪伴', emoji: '🫶' },
-  { id: 'space', label: '给对方空间', emoji: '🍃' },
-  { id: 'distract_gentle', label: '温柔转移注意力', emoji: '🎵' },
-  { id: 'breathe_together', label: '一起深呼吸', emoji: '🌬️' },
-  { id: 'professional', label: '寻求专业帮助', emoji: '📞' },
-  { id: 'boundary', label: '设定边界', emoji: '🚪' },
-  { id: 'selfcare', label: '照顾好自己', emoji: '🛀' },
-  { id: 'gentle_talk', label: '温和沟通', emoji: '🤗' },
-  { id: 'validate', label: '认可对方的感受', emoji: '🩵' },
-  { id: 'observe', label: '记录观察', emoji: '👁️' },
+  { id: 'listen', label: '安静听TA说', emoji: '🫶' },
+  { id: 'space', label: '给TA一点空间', emoji: '🍃' },
+  { id: 'distract_gentle', label: '带TA换个话题', emoji: '🎵' },
+  { id: 'breathe_together', label: '和TA一起深呼吸', emoji: '🌬️' },
+  { id: 'professional', label: '寻找专业支援', emoji: '📞' },
+  { id: 'boundary', label: '画条线保护自己', emoji: '🚪' },
+  { id: 'selfcare', label: '爱一下老己', emoji: '🛀' },
+  { id: 'gentle_talk', label: '好好说话不着急', emoji: '🤗' },
+  { id: 'validate', label: '认可TA的感受', emoji: '🩵' },
+  { id: 'observe', label: '先观察不评判', emoji: '👁️' },
 ];
 
 /** 根据角色获取策略标签 */
@@ -208,13 +208,13 @@ export const MOOD_TAGS = [
 ];
 
 export const REACTION_OPTIONS = [
-  '情绪波动较大',
-  '哭泣',
-  '沉默、不愿说话',
-  '显得烦躁',
-  '自责或自我否定',
-  '不愿沟通',
-  '身体不适（如头痛、胃痛等）',
-  '反复询问或确认',
+  '情绪起伏比较大',
+  '哭了',
+  '沉默、不想说话',
+  '看起来有点烦',
+  '在责怪自己',
+  '不想沟通',
+  '身体不太舒服',
+  '反复问同一件事',
   '其他',
 ];
