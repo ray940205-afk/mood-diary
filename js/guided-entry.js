@@ -1,12 +1,9 @@
 /**
  * 你问我答 —— 心情优先引导模式
- * Step 1: 选心情 → Step 2: 心情专属提问 → 保存
  */
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
 import { uuid, today, showToast, MOOD_TAGS } from './utils.js';
-
-// ====== 心情专属引导问题 ======
 
 const PROMPTS = {
   self: {
@@ -46,13 +43,15 @@ const PROMPTS = {
 };
 
 let currentStep = 1;
+let totalSteps = 5;
 let data = {};
 
 export function initGuidedEntry() {
+  totalSteps = currentRole === 'self' ? 4 : 5;
   currentStep = 1;
   resetData();
   document.getElementById('guided-title').textContent = '你问我答';
-  document.getElementById('btn-prev').style.visibility = 'hidden';
+  document.getElementById('btn-prev').style.display = 'none';
   renderStep();
   updateProgress();
 }
@@ -65,14 +64,14 @@ function resetData() {
 }
 
 function renderStep() {
-  const c = document.getElementById('wizard-container'); if (!c) return;
+  var c = document.getElementById('wizard-container'); if (!c) return;
   if (currentStep === 1) {
     c.innerHTML = renderMoodStep();
-    setTimeout(() => bindMoodCards(), 0);
+    setTimeout(function(){ bindMoodCards(); }, 0);
     document.getElementById('progress-fill').style.width = '33%';
     document.getElementById('progress-text').textContent = '选心情';
   } else {
-    const prompts = PROMPTS[currentRole][data.mood];
+    var prompts = PROMPTS[currentRole][data.mood];
     c.innerHTML = renderPromptStep(prompts);
     document.getElementById('progress-fill').style.width = '100%';
     document.getElementById('progress-text').textContent = '聊一聊';
@@ -81,64 +80,56 @@ function renderStep() {
 }
 
 // ====== Step 1: 选心情 ======
-
 function renderMoodStep() {
-  return `
-    <div class="mood-select">
-      <h3 class="mood-select__title">此刻的你是什么样的？</h3>
-      <p class="mood-select__sub">选一个最接近的感受，我会陪你聊一聊</p>
-      <div class="mood-select__grid">
-        ${MOOD_TAGS.map(t => `
-          <button class="mood-card" data-mood="${t.id}">
-            <span class="mood-card__emoji">${t.emoji}</span>
-            <span class="mood-card__label">${t.label}</span>
-          </button>
-        `).join('')}
-      </div>
-    </div>
-  `;
+  var cards = MOOD_TAGS.map(function(t) {
+    return '<button class="mood-card" data-mood="' + t.id + '">' +
+      '<span class="mood-card__emoji">' + t.emoji + '</span>' +
+      '<span class="mood-card__label">' + t.label + '</span>' +
+      '</button>';
+  }).join('');
+  return '<div class="mood-select">' +
+    '<h3 class="mood-select__title">此刻的你是什么样的？</h3>' +
+    '<p class="mood-select__sub">选一个最接近的感受，我会陪你聊一聊</p>' +
+    '<div class="mood-select__grid">' + cards + '</div>' +
+    '</div>';
 }
 
 // ====== Step 2: 心情专属提问 ======
-
 function renderPromptStep(prompts) {
-  const emoji = MOOD_TAGS.find(t => t.id === data.mood)?.emoji || '';
-  return `
-    <div class="prompt-step">
-      ${prompts.map((p, i) => `
-        <div class="prompt-block">
-          <div class="prompt-block__q">${emoji} ${p.q}</div>
-          <textarea class="prompt-block__input" id="prompt-${i}" placeholder="${p.hint}">${esc(data['prompt_' + i] || '')}</textarea>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  var emoji = '';
+  var found = MOOD_TAGS.find(function(t) { return t.id === data.mood; });
+  if (found) emoji = found.emoji;
+  var blocks = prompts.map(function(p, i) {
+    var val = data['prompt_' + i] || '';
+    return '<div class="prompt-block">' +
+      '<div class="prompt-block__q">' + emoji + ' ' + p.q + '</div>' +
+      '<textarea class="prompt-block__input" id="prompt-' + i + '" placeholder="' + p.hint + '">' + esc(val) + '</textarea>' +
+      '</div>';
+  }).join('');
+  return '<div class="prompt-step">' + blocks + '</div>';
 }
 
 // ====== 导航 ======
-
 function updateProgress() {
-  const fill = document.getElementById('progress-fill');
-  const text = document.getElementById('progress-text');
+  var fill = document.getElementById('progress-fill');
+  var text = document.getElementById('progress-text');
   if (fill) fill.style.width = currentStep === 1 ? '33%' : '100%';
   if (text) text.textContent = currentStep === 1 ? '选心情' : '聊一聊';
 }
 
 function updateNavButtons() {
-  const nav = document.getElementById('wizard-nav');
-  const prevBtn = document.getElementById('btn-prev');
-  const nextBtn = document.getElementById('btn-next');
-  const unsureBtn = document.getElementById('btn-unsure');
+  var prevBtn = document.getElementById('btn-prev');
+  var nextBtn = document.getElementById('btn-next');
+  var unsureBtn = document.getElementById('btn-unsure');
+  var nav = document.getElementById('wizard-nav');
 
   if (currentStep === 1) {
-    // 两个按钮居中
-    if (nav) { nav.className = 'wizard-nav wizard-nav--two'; }
+    if (nav) nav.className = 'wizard-nav wizard-nav--two';
     if (prevBtn) prevBtn.style.display = 'none';
     if (unsureBtn) unsureBtn.style.display = '';
     if (nextBtn) nextBtn.textContent = '选好了';
   } else {
-    // 三个按钮
-    if (nav) { nav.className = 'wizard-nav wizard-nav--three'; }
+    if (nav) nav.className = 'wizard-nav wizard-nav--three';
     if (prevBtn) prevBtn.style.display = '';
     if (unsureBtn) unsureBtn.style.display = 'none';
     if (nextBtn) nextBtn.textContent = '✓ 保存记录';
@@ -146,33 +137,39 @@ function updateNavButtons() {
 }
 
 // ====== 收集数据 ======
-
 function collectPromptData(prompts) {
-  prompts.forEach((_, i) => {
-    const el = document.getElementById('prompt-' + i);
+  prompts.forEach(function(_, i) {
+    var el = document.getElementById('prompt-' + i);
     if (el) data['prompt_' + i] = el.value;
   });
-  // 合并为 content
-  data.content = prompts.map((p, i) => {
-    const answer = data['prompt_' + i] || '';
-    return answer ? `${p.q}\n${answer}` : '';
+  data.content = prompts.map(function(p, i) {
+    var answer = data['prompt_' + i] || '';
+    return answer ? p.q + '\n' + answer : '';
   }).filter(Boolean).join('\n\n');
 }
 
-export async function nextStep() {
+export function bindMoodCards() {
+  document.querySelectorAll('.mood-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.mood-card').forEach(function(c) { c.classList.remove('mood-card--selected'); });
+      card.classList.add('mood-card--selected');
+      data.mood = card.dataset.mood;
+    });
+  });
+}
+
+export function nextStep() {
   if (currentStep === 1) {
-    // 收集心情选择
-    const selected = document.querySelector('.mood-card--selected');
+    var selected = document.querySelector('.mood-card--selected');
     if (!selected) { showToast('请先选择一个心情'); return; }
     data.mood = selected.dataset.mood;
     currentStep = 2;
     renderStep();
   } else {
-    // 收集回答并保存
-    const prompts = PROMPTS[currentRole][data.mood];
+    var prompts = PROMPTS[currentRole][data.mood];
     collectPromptData(prompts);
     if (!data.content.trim()) { showToast('请至少回答一个问题'); return; }
-    await saveCurrentEntry();
+    saveCurrentEntry();
   }
 }
 
@@ -185,19 +182,8 @@ async function saveCurrentEntry() {
     data.createdAt = Date.now();
     await saveEntry(data);
     showToast('记录已保存 💚');
-    setTimeout(() => { resetData(); window.location.hash = '#record'; }, 800);
+    setTimeout(function() { resetData(); window.location.hash = '#record'; }, 800);
   } catch (err) { console.error(err); showToast('保存失败'); }
 }
 
 function esc(str) { if (!str) return ''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// 需要在 renderStep 后绑定心情卡片点击
-export function bindMoodCards() {
-  document.querySelectorAll('.mood-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('mood-card--selected'));
-      card.classList.add('mood-card--selected');
-      data.mood = card.dataset.mood;
-    });
-  });
-}
