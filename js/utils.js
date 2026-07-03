@@ -97,12 +97,18 @@ export function debounce(fn, delay = 300) {
   };
 }
 
-// ====== 自定义标签 ======
-const CUSTOM_TAGS_KEY = 'mood-diary-custom-emotion-tags';
+// ====== 自定义标签（增删改） ======
+const CUSTOM_TAGS_KEY = 'mood-diary-custom-tags';
+const OVERRIDES_KEY = 'mood-diary-tag-overrides';
 
 /** 获取用户自定义情绪标签 */
 export function getCustomTags() {
   try { return JSON.parse(localStorage.getItem(CUSTOM_TAGS_KEY)) || []; } catch (_) { return []; }
+}
+
+/** 获取默认标签的覆盖（用户修改过的默认标签） */
+export function getTagOverrides() {
+  try { return JSON.parse(localStorage.getItem(OVERRIDES_KEY)) || {}; } catch (_) { return {}; }
 }
 
 /** 添加自定义标签 */
@@ -114,15 +120,32 @@ export function addCustomTag(label, emoji = '🏷️') {
   return { id, label, emoji };
 }
 
+/** 更新标签（默认标签写覆盖，自定义标签直接改） */
+export function updateTag(id, label, emoji) {
+  if (id.startsWith('custom_')) {
+    const tags = getCustomTags().map(t => t.id === id ? { ...t, label, emoji } : t);
+    localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(tags));
+  } else {
+    const overrides = getTagOverrides();
+    overrides[id] = { label, emoji };
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
+  }
+}
+
 /** 删除自定义标签 */
 export function removeCustomTag(id) {
   const tags = getCustomTags().filter(t => t.id !== id);
   localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(tags));
 }
 
-/** 获取全部情绪标签（默认 + 自定义） */
+/** 获取全部情绪标签（默认用覆盖版本 + 自定义） */
 export function getAllEmotionTags() {
-  return [...EMOTION_TAGS, ...getCustomTags()];
+  const overrides = getTagOverrides();
+  const defaultTags = EMOTION_TAGS.map(t => {
+    if (overrides[t.id]) return { ...t, label: overrides[t.id].label, emoji: overrides[t.id].emoji };
+    return t;
+  });
+  return [...defaultTags, ...getCustomTags()];
 }
 
 // ====== 情绪标签（两个板块共用） ======

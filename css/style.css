@@ -593,6 +593,92 @@ body {
   pointer-events: auto;
 }
 
+/* ====== 标签管理面板 ====== */
+.tag-manager {
+  background: var(--color-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-elevated);
+  margin-top: var(--space-md);
+  border: 1.5px solid var(--color-border);
+}
+
+.tag-manager__title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+
+.tag-manager__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.tm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tm-emoji {
+  width: 48px;
+  padding: 6px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  text-align: center;
+  font-family: var(--font-family);
+  background: var(--color-card);
+}
+
+.tm-label {
+  flex: 1;
+  padding: 6px var(--space-sm);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  background: var(--color-card);
+}
+
+.tm-btn {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tm-save { color: var(--color-primary); border-color: var(--color-primary); }
+.tm-del { color: var(--color-danger); }
+.tm-reset { color: var(--color-text-muted); }
+
+.tag-manager__add {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.tag-manager__add input {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  background: var(--color-card);
+}
+
 .custom-tag-form {
   display: flex;
   gap: var(--space-sm);

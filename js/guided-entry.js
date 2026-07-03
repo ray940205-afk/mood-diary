@@ -3,7 +3,7 @@
  */
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
-import { uuid, today, showToast, EMOTION_TAGS, SELF_STRATEGY_TAGS, FAMILY_STRATEGY_TAGS, REACTION_OPTIONS, MOOD_TAGS, getAllEmotionTags, addCustomTag, removeCustomTag, getCustomTags } from './utils.js';
+import { uuid, today, showToast, EMOTION_TAGS, SELF_STRATEGY_TAGS, FAMILY_STRATEGY_TAGS, REACTION_OPTIONS, MOOD_TAGS, getAllEmotionTags, addCustomTag, removeCustomTag, updateTag, getCustomTags, getTagOverrides } from './utils.js';
 
 let currentStep = 1, totalSteps = 5;
 let data = {};
@@ -37,22 +37,14 @@ function familyStep(c) {
 function step1() { return ws('发生了什么？',`<textarea id="input-trigger">${esc(data.trigger)}</textarea>`,'💡 客观记录事情的起因和经过'); }
 function step2() {
   const allTags = getAllEmotionTags();
-  const customTags = getCustomTags();
   return ws('我当时感受到了什么？',
     `<textarea id="input-emotion-text" class="wizard-textarea-emotion">${esc(data.emotionText)}</textarea>
      <div class="tag-grid" id="tag-grid-emotions">
-       ${allTags.map(t => {
-         const isCustom = t.id.startsWith('custom_');
-         const delBtn = isCustom ? `<span class="tag-del" data-del="${t.id}">×</span>` : '';
-         return `<button class="tag-btn ${data.emotions.includes(t.id)?'tag-btn--selected':''} ${isCustom?'tag-btn--custom':''}" data-tag="${t.id}">${t.emoji} ${t.label}${delBtn}</button>`;
-       }).join('')}
-       <button class="tag-btn tag-btn--add" id="btn-add-tag">✏️ 自定义</button>
+       ${allTags.map(t => `<button class="tag-btn ${data.emotions.includes(t.id)?'tag-btn--selected':''}" data-tag="${t.id}">${t.emoji} ${t.label}</button>`).join('')}
+       <button class="tag-btn tag-btn--add" id="btn-manage-tags">✏️ 管理标签</button>
      </div>
-     <div class="custom-tag-form" id="custom-tag-form" style="display:none">
-       <input type="text" id="input-custom-tag" placeholder="输入标签名，如：委屈" maxlength="10">
-       <button type="button" class="btn btn--primary btn--sm" id="btn-save-custom-tag">添加</button>
-     </div>`,
-    '💡 点击标签插入到记录框，也可以自己输入。点击「自定义」创建你自己的标签'
+     <div class="tag-manager" id="tag-manager" style="display:none"></div>`,
+    '💡 点击标签插入到记录框。点击「管理标签」可以添加、修改、删除标签'
   );
 }
 function step3() { return ws('我做了什么？',`<div class="tag-grid" id="tag-grid-strategies">${SELF_STRATEGY_TAGS.map(t=>tagBtn(t,data.strategies)).join('')}</div><textarea id="input-strategy-note" class="wizard-textarea-sm">${esc(data.strategyNote)}</textarea>`,'💡 哪怕是很小的尝试也值得记录'); }
@@ -89,34 +81,99 @@ function bindMood() {
   });});
 }
 
-/** 自定义标签：展开/收起表单、添加、删除 */
+/** 标签管理面板：增删改 */
 function bindCustomTag() {
-  const addBtn = document.getElementById('btn-add-tag');
-  const form = document.getElementById('custom-tag-form');
-  const input = document.getElementById('input-custom-tag');
-  const saveBtn = document.getElementById('btn-save-custom-tag');
+  const btn = document.getElementById('btn-manage-tags');
+  if (!btn) return;
+  btn.onclick = () => {
+    const panel = document.getElementById('tag-manager');
+    if (!panel) return;
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) renderTagManager(panel);
+  };
+}
 
-  if (addBtn) addBtn.onclick = () => { form.style.display = 'flex'; input.focus(); };
-  if (saveBtn) saveBtn.onclick = () => {
-    const label = (input?.value || '').trim();
+function renderTagManager(panel) {
+  const allTags = getAllEmotionTags();
+  const overrides = getTagOverrides();
+  const customTags = getCustomTags();
+
+  let rows = '';
+  // 默认标签
+  EMOTION_TAGS.forEach(t => {
+    const ov = overrides[t.id];
+    const label = ov ? ov.label : t.label;
+    const emoji = ov ? ov.emoji : t.emoji;
+    const edited = !!ov;
+    rows += tagRow(t.id, emoji, label, edited, false);
+  });
+  // 自定义标签
+  customTags.forEach(t => {
+    rows += tagRow(t.id, t.emoji, t.label, false, true);
+  });
+
+  panel.innerHTML = `
+    <div class="tag-manager__title">管理标签</div>
+    <div class="tag-manager__list">${rows}</div>
+    <div class="tag-manager__add">
+      <input type="text" id="new-tag-label" placeholder="新标签名" maxlength="10">
+      <button type="button" class="btn btn--primary btn--sm" id="btn-add-new-tag">添加</button>
+    </div>
+    <button type="button" class="btn btn--outline btn--sm btn--full" id="btn-close-manager" style="margin-top:8px">完成</button>
+  `;
+
+  // 关闭
+  document.getElementById('btn-close-manager').onclick = () => { panel.style.display = 'none'; renderStep(); };
+
+  // 删除
+  panel.querySelectorAll('.tm-del').forEach(btn => { btn.onclick = () => {
+    const id = btn.dataset.id;
+    removeCustomTag(id);
+    data.emotions = data.emotions.filter(t => t !== id);
+    renderTagManager(panel);
+  };});
+
+  // 保存编辑
+  panel.querySelectorAll('.tm-save').forEach(btn => { btn.onclick = () => {
+    const row = btn.closest('.tm-row');
+    const id = row.dataset.id;
+    const label = row.querySelector('.tm-label').value.trim();
+    const emoji = row.querySelector('.tm-emoji').value.trim() || '🏷️';
+    if (!label) { showToast('标签名不能为空'); return; }
+    updateTag(id, label, emoji);
+    renderTagManager(panel);
+  };});
+
+  // 还原默认
+  panel.querySelectorAll('.tm-reset').forEach(btn => { btn.onclick = () => {
+    const id = btn.dataset.id;
+    const overrides = getTagOverrides();
+    delete overrides[id];
+    localStorage.setItem('mood-diary-tag-overrides', JSON.stringify(overrides));
+    renderTagManager(panel);
+  };});
+
+  // 添加新标签
+  document.getElementById('btn-add-new-tag').onclick = () => {
+    const label = document.getElementById('new-tag-label').value.trim();
     if (!label) { showToast('请输入标签名'); return; }
     const tag = addCustomTag(label);
     data.emotions = [...data.emotions, tag.id];
-    // 重新渲染步骤
-    renderStep();
+    renderTagManager(panel);
   };
-  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBtn?.click(); });
+}
 
-  // 删除自定义标签
-  document.querySelectorAll('.tag-del').forEach(del => {
-    del.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const tagId = del.dataset.del;
-      removeCustomTag(tagId);
-      data.emotions = data.emotions.filter(t => t !== tagId);
-      renderStep();
-    });
-  });
+function tagRow(id, emoji, label, edited, isCustom) {
+  return `
+    <div class="tm-row" data-id="${id}">
+      <input class="tm-emoji" value="${esc(emoji)}" maxlength="4" size="4">
+      <input class="tm-label" value="${esc(label)}" maxlength="10">
+      <button class="tm-btn tm-save" title="保存">✓</button>
+      ${edited ? `<button class="tm-btn tm-reset" data-id="${id}" title="还原默认">↩</button>` : ''}
+      ${isCustom ? `<button class="tm-btn tm-del" data-id="${id}" title="删除">×</button>` : ''}
+    </div>
+  `;
 }
 
 function bindReactionChips() {
