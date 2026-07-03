@@ -134,7 +134,7 @@ export async function renderManage() {
     });
     // 发送到 Vercel API
     try {
-      await fetch('https://mood-diary-app.vercel.app/api/feedback', {
+      await fetch('https://cerulean-cheesecake-665fbb.netlify.app/.netlify/functions/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: text }),
