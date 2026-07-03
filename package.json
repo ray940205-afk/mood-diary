@@ -1,0 +1,6 @@
+{
+  "name": "mood-diary",
+  "dependencies": {
+    "@netlify/blobs": "^7.3.0"
+  }
+}
