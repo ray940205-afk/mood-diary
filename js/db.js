@@ -62,7 +62,11 @@ export function saveEntry(entry) {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     const request = store.put(entry);
-    request.onsuccess = () => resolve(entry);
+    request.onsuccess = async () => {
+      // 异步同步到云端（不阻塞本地保存）
+      try { const m = await import('./supabase.js'); m.syncEntry(entry); } catch (_) {}
+      resolve(entry);
+    };
     request.onerror = (event) => reject(event.target.error);
   });
 }

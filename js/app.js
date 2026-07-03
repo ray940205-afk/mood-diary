@@ -3,6 +3,7 @@
  */
 import { initDB, getStats, saveEntry } from './db.js';
 import { QUOTES } from './quotes.js';
+import { trackVisit } from './supabase.js';
 
 /** 获取一条未读过的语录，全部读过则重置 */
 function freshQuote() {
@@ -31,6 +32,7 @@ import { initGuidedEntry, nextStep, prevStep } from './guided-entry.js';
 import { initFreeEntry, saveFreeEntry } from './free-entry.js';
 import { renderNotes } from './notes.js';
 import { renderManage } from './manage.js';
+import { initDreamEntry, saveDream, interpretDreamNow } from './dream-entry.js';
 import { showToast, uuid, today } from './utils.js';
 
 export let currentRole = 'self';
@@ -42,15 +44,25 @@ const ROUTES = {
   'free-entry':   { view: 'view-free-entry',   nav: null, init: initFreeEntry },
   notes:      { view: 'view-notes',      nav: 'notes',  init: renderNotes },
   manage:     { view: 'view-manage',     nav: 'manage', init: renderManage },
+  'dream-entry': { view: 'view-dream-entry', nav: null, init: initDreamEntry },
 };
 
 let currentRoute = 'home';
 let currentQuote = null;
 
 async function bootstrap() {
+  // 恢复保存的主题颜色
+  restoreThemeColor();
+  trackVisit(); // 上报访问
   try { await initDB(); } catch (err) { console.error(err); showToast('初始化失败'); return; }
+  // 本地环境清除旧 SW，线上注册新 SW
   if ('serviceWorker' in navigator) {
-    try { await navigator.serviceWorker.register('/sw.js'); } catch (_) {}
+    if (location.hostname === 'localhost') {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) { await reg.unregister(); console.log('SW unregistered for dev'); }
+    } else {
+      try { await navigator.serviceWorker.register('/sw.js'); } catch (_) {}
+    }
   }
   window.addEventListener('hashchange', handleRoute);
   bindGlobalEvents();
@@ -69,7 +81,6 @@ function navigateTo(route) {
   });
   if (active.init) active.init();
   window.scrollTo(0, 0);
-  // 刷新 Lucide 图标
   setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
 }
 
@@ -92,6 +103,9 @@ function bindGlobalEvents() {
   });
   document.getElementById('btn-next')?.addEventListener('click', nextStep);
   document.getElementById('btn-prev')?.addEventListener('click', prevStep);
+  document.getElementById('btn-unsure')?.addEventListener('click', showUnsurePopup);
+  document.getElementById('btn-save-dream')?.addEventListener('click', saveDream);
+  document.getElementById('btn-interpret-dream')?.addEventListener('click', interpretDreamNow);
   document.getElementById('free-form')?.addEventListener('submit', (e) => { e.preventDefault(); saveFreeEntry(); });
 }
 
@@ -148,6 +162,35 @@ async function renderRecord() {
         <div class="stats-column"><div class="stats-column__label">💝 我和TA的情绪</div><div class="stats-mini-grid"><div class="stat-item stat-item--sm"><span class="stat-item__number">${familyStats.total}</span><span class="stat-item__label">总记录</span></div><div class="stat-item stat-item--sm"><span class="stat-item__number">${familyStats.recentCount}</span><span class="stat-item__label">近7天</span></div></div></div>
       </div>`;
   } catch (err) { console.error(err); }
+}
+
+/** 恢复保存的主题颜色 */
+function restoreThemeColor() {
+  const saved = localStorage.getItem('mood-diary-theme-color');
+  if (!saved) return;
+  if (window.pickColor) {
+    window.pickColor(saved);
+  } else {
+    document.body.setAttribute('data-theme', saved);
+  }
+}
+
+/** 没想好弹窗 */
+function showUnsurePopup() {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+  overlay.innerHTML = `
+    <div class="popup-dialog">
+      <div class="popup-dialog__title">没关系的～</div>
+      <button class="btn btn--outline btn--full" id="popup-back">再想想</button>
+      <button class="btn btn--primary btn--full" id="popup-free">随便记录点什么</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('#popup-back').onclick = () => overlay.remove();
+  overlay.querySelector('#popup-free').onclick = () => { overlay.remove(); currentRole = 'self'; navigateTo('free-entry'); };
 }
 
 document.addEventListener('DOMContentLoaded', bootstrap);

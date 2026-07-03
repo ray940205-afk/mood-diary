@@ -523,11 +523,56 @@ body {
 .wizard-nav {
   display: flex;
   gap: var(--space-md);
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
 }
 
 .wizard-nav .btn {
-  flex: 1;
+  min-width: 120px;
+  flex: 0 1 auto;
+}
+
+.wizard-nav--three .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ====== 弹窗 ====== */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn 200ms ease;
+}
+
+.popup-dialog {
+  background: var(--color-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  margin: var(--space-lg);
+  max-width: 300px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-elevated);
+}
+
+.popup-dialog__title {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  margin-bottom: var(--space-lg);
+  color: var(--color-text);
+}
+
+.popup-dialog .btn {
+  margin-bottom: var(--space-sm);
+}
+
+.popup-dialog .btn:last-child {
+  margin-bottom: 0;
 }
 
 /* ====== Tag Grid / Chip Grid ====== */
@@ -664,19 +709,16 @@ body {
 .tm-del { color: var(--color-danger); }
 .tm-reset { color: var(--color-text-muted); }
 
-.tag-manager__add {
-  display: flex;
-  gap: var(--space-sm);
+.tm-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
 }
 
-.tag-manager__add input {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-family: var(--font-family);
-  background: var(--color-card);
+.tm-limit-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  text-align: center;
 }
 
 .custom-tag-form {
@@ -1339,6 +1381,106 @@ input[type="date"].form-input {
   color: var(--color-primary);
 }
 
+/* ====== 心情选择页 ====== */
+.mood-select {
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+.mood-select__title {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.03em;
+}
+
+.mood-select__sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+}
+
+.mood-select__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.mood-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-card);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-card);
+}
+
+.mood-card:active {
+  transform: scale(0.97);
+}
+
+.mood-card--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 2px 16px rgba(123,174,122,0.2);
+}
+
+.mood-card__emoji {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.mood-card__label {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+/* ====== 引导提问页 ====== */
+.prompt-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.prompt-block__q {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+}
+
+.prompt-block__input {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+  background: var(--color-card);
+  color: var(--color-text);
+  resize: vertical;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+}
+
+.prompt-block__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
 /* ====== 心情按钮 ====== */
 .mood-grid {
   display: flex;
@@ -1516,6 +1658,45 @@ input[type="date"].form-input {
   transform: scale(1.1);
 }
 
+/* ====== 主题颜色 ====== */
+body[data-theme="lavender"] {
+  --color-primary: #B8A0D0;
+  --color-primary-dark: #9B7EC0;
+  --color-primary-light: #F5F0FA;
+  --color-accent: #D0C0E8;
+  --color-accent-light: #FAF7FF;
+  --color-bg: #FBFAFF;
+  --color-border: #E5E0F0;
+  --color-border-light: #F2EFF8;
+  --color-shadow: rgba(100, 80, 140, 0.05);
+}
+
+body[data-theme="peach"] {
+  --color-primary: #F0A890;
+  --color-primary-dark: #E08070;
+  --color-primary-light: #FEF0EB;
+  --color-accent: #F0C8A0;
+  --color-accent-light: #FFF6F0;
+  --color-bg: #FFF9F5;
+  --color-border: #F0E0D5;
+  --color-border-light: #F8EFE8;
+  --color-shadow: rgba(120, 80, 60, 0.05);
+}
+
+body[data-theme="blue"] {
+  --color-primary: #90B8E0;
+  --color-primary-dark: #7098C8;
+  --color-primary-light: #EEF4FB;
+  --color-accent: #90D0D8;
+  --color-accent-light: #F0F7FA;
+  --color-bg: #F7FAFD;
+  --color-border: #D8E4F0;
+  --color-border-light: #EDF2F8;
+  --color-shadow: rgba(60, 80, 120, 0.05);
+}
+
+/* 绿色是默认，不需要额外定义 */
+
 /* ====== 深色主题 ====== */
 body.dark-theme {
   --color-bg: #1E1E1E;
@@ -1528,6 +1709,183 @@ body.dark-theme {
   --color-primary-light: #2A3A2A;
   --color-accent-light: #3A2A2A;
   --color-shadow: rgba(0,0,0,0.3);
+}
+
+/* ====== 输入区工具栏 ====== */
+.input-toolbar {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: -4px;
+  margin-bottom: var(--space-md);
+}
+
+.toolbar-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toolbar-btn:active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+/* 随记标签面板 */
+.free-tag-panel {
+  background: var(--color-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-elevated);
+  margin-bottom: var(--space-md);
+  border: 1.5px solid var(--color-border);
+}
+
+.free-tag-panel .tag-grid {
+  margin-bottom: 0;
+}
+
+.free-tag-edit {
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-md);
+}
+
+.free-tag-edit__summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  margin-bottom: var(--space-sm);
+}
+
+/* ====== 梦境解析 ====== */
+.entry-btn--dream {
+  background: linear-gradient(135deg, #F5F0FF 0%, #EDE4F8 100%);
+  border-color: #D4C8E8;
+}
+
+.dream-result {
+  background: linear-gradient(135deg, #F5F0FF 0%, #FAF7FF 100%);
+  border: 1.5px solid #D4C8E8;
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.dream-result__title {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  margin-bottom: var(--space-sm);
+  text-align: center;
+}
+
+.dream-result__disclaimer {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  line-height: 1.6;
+}
+
+.dream-symbol {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  border-left: 3px solid #B8A0D0;
+}
+
+.dream-symbol__key {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #6B4C8A;
+  margin-bottom: 4px;
+}
+
+.dream-symbol__meaning {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.dream-symbol__source {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.dream-symbol__reflect {
+  font-size: var(--font-size-sm);
+  color: #6B4C8A;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px dashed #D4C8E8;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+/* ====== 笔记中的可折叠梦境解析 ====== */
+.dream-interp-collapse {
+  margin-top: var(--space-sm);
+}
+
+.dream-interp-toggle {
+  width: 100%;
+  padding: var(--space-sm) 0;
+  border: none;
+  background: none;
+  font-size: var(--font-size-sm);
+  color: #6B4C8A;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dream-interp-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.dream-interp-collapse--open .dream-interp-arrow {
+  transform: rotate(180deg);
+}
+
+.dream-interp-body {
+  display: none;
+  padding-top: var(--space-sm);
+}
+
+.dream-interp-collapse--open .dream-interp-body {
+  display: block;
+}
+
+.dream-symbol--compact {
+  font-size: var(--font-size-xs);
+  padding: var(--space-sm);
+  margin-bottom: 6px;
+}
+
+.dream-result__more {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: var(--space-sm);
 }
 
 /* ====== 图片预览 ====== */

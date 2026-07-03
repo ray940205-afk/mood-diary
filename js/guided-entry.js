@@ -1,221 +1,203 @@
 /**
- * 你问我答 —— 双角色（self=4步 / family=5步），最后一步用心情标签替代评分
+ * 你问我答 —— 心情优先引导模式
+ * Step 1: 选心情 → Step 2: 心情专属提问 → 保存
  */
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
-import { uuid, today, showToast, EMOTION_TAGS, SELF_STRATEGY_TAGS, FAMILY_STRATEGY_TAGS, REACTION_OPTIONS, MOOD_TAGS, getAllEmotionTags, addCustomTag, removeCustomTag, updateTag, getCustomTags, getTagOverrides } from './utils.js';
+import { uuid, today, showToast, MOOD_TAGS } from './utils.js';
 
-let currentStep = 1, totalSteps = 5;
+// ====== 心情专属引导问题 ======
+
+const PROMPTS = {
+  self: {
+    good: [
+      { q: '今天发生了什么让你感到开心或温暖的事？', hint: '试着描述事情的经过，越具体越好' },
+      { q: '那时候你在做什么？身边有谁？', hint: '回忆当时的场景细节' },
+      { q: '这种感觉让你想到了什么？', hint: '可以是某个画面、某个人、某句话...' },
+    ],
+    neutral: [
+      { q: '今天过得怎么样？随便聊聊', hint: '不用刻意组织语言，想到什么写什么' },
+      { q: '有没有哪个瞬间让你停下来注意了一下？', hint: '哪怕是很小的事' },
+      { q: '此刻的你心里在想什么？', hint: '不用过滤，写下脑子里的第一反应' },
+    ],
+    bad: [
+      { q: '今天发生了什么？不着急，慢慢说', hint: '不需要梳理得很清楚，把想到的写下来就好' },
+      { q: '那种感觉具体是什么样的？', hint: '是身体上的紧张？心里的空洞？还是别的什么？' },
+      { q: '如果不用"好"或"不好"，你会怎么形容现在的自己？', hint: '比如：像一杯放凉了的水 / 像被揉皱的纸...' },
+    ],
+  },
+  family: {
+    good: [
+      { q: '今天发生了什么让你觉得温暖或欣慰的事？', hint: '跟TA有关的瞬间，或者只是你自己的感受' },
+      { q: 'TA当时是什么状态？', hint: '说了什么、做了什么、表情是什么样的' },
+      { q: '那一刻你在想什么？', hint: '你的感受也很重要' },
+    ],
+    neutral: [
+      { q: '今天和TA相处得怎么样？随便聊聊', hint: '平淡的一天也值得记录' },
+      { q: '有没有哪个细节让你注意了一下？', hint: 'TA的一个表情、一句话、一个动作...' },
+      { q: '此刻的你心里在想什么？', hint: '关于TA，也关于你自己' },
+    ],
+    bad: [
+      { q: '今天发生了什么？不着急，慢慢说', hint: '事情的起因和经过，按你自己的节奏来' },
+      { q: 'TA当时的状态是什么样的？', hint: '观察到的行为、话语、表情' },
+      { q: '你当时心里是什么感受？', hint: '不需要"正确"或"应该"，你的真实感受' },
+    ],
+  },
+};
+
+let currentStep = 1;
 let data = {};
 
 export function initGuidedEntry() {
-  totalSteps = currentRole === 'self' ? 4 : 5;
   currentStep = 1;
   resetData();
-  const title = document.getElementById('guided-title');
-  if (title) title.textContent = '你问我答';
-  renderStep(); updateProgress();
+  document.getElementById('guided-title').textContent = '你问我答';
+  document.getElementById('btn-prev').style.visibility = 'hidden';
+  renderStep();
+  updateProgress();
 }
 
 function resetData() {
-  data = { id: uuid(), type: 'guided', role: currentRole, date: today(), createdAt: Date.now(), trigger: '', patientReaction: '', emotions: [], emotionText: '', strategies: [], strategyNote: '', mood: '', note: '' };
+  data = {
+    id: uuid(), type: 'guided', role: currentRole, date: today(), createdAt: Date.now(),
+    mood: '', content: '', note: '',
+  };
 }
 
 function renderStep() {
   const c = document.getElementById('wizard-container'); if (!c) return;
-  if (currentRole === 'self') { selfStep(c); } else { familyStep(c); }
-  updateProgress(); updateNavButtons();
+  if (currentStep === 1) {
+    c.innerHTML = renderMoodStep();
+    setTimeout(() => bindMoodCards(), 0);
+    document.getElementById('progress-fill').style.width = '33%';
+    document.getElementById('progress-text').textContent = '选心情';
+  } else {
+    const prompts = PROMPTS[currentRole][data.mood];
+    c.innerHTML = renderPromptStep(prompts);
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-text').textContent = '聊一聊';
+  }
+  updateNavButtons();
 }
 
-function selfStep(c) {
-  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=step2(); setTimeout(()=>{bindTags('emotions');bindCustomTag();},0); break; case 3: c.innerHTML=step3(); setTimeout(()=>bindTags('strategies'),0); break; case 4: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
-}
-function familyStep(c) {
-  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=stepF2(); setTimeout(()=>bindReactionChips(),0); break; case 3: c.innerHTML=step2(); setTimeout(()=>{bindTags('emotions');bindCustomTag();},0); break; case 4: c.innerHTML=stepF4(); setTimeout(()=>bindTags('strategies'),0); break; case 5: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
-}
+// ====== Step 1: 选心情 ======
 
-function step1() { return ws('发生了什么？',`<textarea id="input-trigger">${esc(data.trigger)}</textarea>`,'💡 客观记录事情的起因和经过'); }
-function step2() {
-  const allTags = getAllEmotionTags();
-  return ws('我当时感受到了什么？',
-    `<textarea id="input-emotion-text" class="wizard-textarea-emotion">${esc(data.emotionText)}</textarea>
-     <div class="tag-grid" id="tag-grid-emotions">
-       ${allTags.map(t => `<button class="tag-btn ${data.emotions.includes(t.id)?'tag-btn--selected':''}" data-tag="${t.id}">${t.emoji} ${t.label}</button>`).join('')}
-       <button class="tag-btn tag-btn--add" id="btn-manage-tags">✏️ 管理标签</button>
-     </div>
-     <div class="tag-manager" id="tag-manager" style="display:none"></div>`,
-    '💡 点击标签插入到记录框。点击「管理标签」可以添加、修改、删除标签'
-  );
-}
-function step3() { return ws('我做了什么？',`<div class="tag-grid" id="tag-grid-strategies">${SELF_STRATEGY_TAGS.map(t=>tagBtn(t,data.strategies)).join('')}</div><textarea id="input-strategy-note" class="wizard-textarea-sm">${esc(data.strategyNote)}</textarea>`,'💡 哪怕是很小的尝试也值得记录'); }
-function stepF2() { const chips=REACTION_OPTIONS.map(r=>`<button class="tag-btn ${data.patientReaction===r?'tag-btn--selected':''}" data-value="${esc(r)}">${r}</button>`).join(''); return ws('TA 当时的状态',`<div class="tag-grid" id="reaction-chips">${chips}</div><input type="text" id="input-reaction-custom" value="${esc(data.patientReaction&&!REACTION_OPTIONS.includes(data.patientReaction)?data.patientReaction:'')}">`,'💡 选择一个最接近的，或自己描述'); }
-function stepF4() { return ws('我是怎么应对的？',`<div class="tag-grid" id="tag-grid-strategies">${FAMILY_STRATEGY_TAGS.map(t=>tagBtn(t,data.strategies)).join('')}</div><textarea id="input-strategy-note" class="wizard-textarea-sm">${esc(data.strategyNote)}</textarea>`,'💡 记录你实际做了什么'); }
-
-function step4() {
-  return ws('此刻的心情',`<div class="mood-grid" id="mood-grid">${MOOD_TAGS.map(t=>`<button class="mood-btn ${data.mood===t.id?'mood-btn--selected':''}" data-mood="${t.id}"><span class="mood-btn__emoji">${t.emoji}</span><span class="mood-btn__label">${t.label}</span></button>`).join('')}</div><textarea id="input-note" class="wizard-textarea-sm">${esc(data.note)}</textarea>`,'💡 选一个最接近你此刻感受的心情');
-}
-
-function ws(title, body, tip) { return `<div class="wizard-step"><h3 class="wizard-step__title">${title}</h3><div class="wizard-step__body">${body}</div><p class="wizard-step__tip">${tip}</p></div>`; }
-function tagBtn(t, arr) { return `<button class="tag-btn ${arr.includes(t.id)?'tag-btn--selected':''}" data-tag="${t.id}">${t.emoji} ${t.label}</button>`; }
-
-function bindTags(field) {
-  const grid = document.getElementById(`tag-grid-${field}`); if (!grid) return;
-  const isEmo = field === 'emotions';
-  const ta = isEmo ? document.getElementById('input-emotion-text') : null;
-  grid.querySelectorAll('.tag-btn').forEach(btn => { btn.addEventListener('click', () => {
-    const id = btn.dataset.tag, arr = data[field], sel = arr.includes(id);
-    if (sel) { data[field]=arr.filter(t=>t!==id); btn.classList.remove('tag-btn--selected'); if(ta) removeFromTA(ta, btn.textContent.trim()); }
-    else { data[field]=[...arr,id]; btn.classList.add('tag-btn--selected'); if(ta) insertToTA(ta, btn.textContent.trim()); }
-  });});
-}
-
-function insertToTA(ta, txt) { const cur=ta.value.trimEnd(); ta.value=cur+(cur?' ':'')+txt; ta.focus(); }
-function removeFromTA(ta, txt) { const e=txt.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); ta.value=ta.value.replace(new RegExp('\\s*'+e+'\\s*','g'),' ').replace(/\s+/g,' ').trim(); }
-
-function bindMood() {
-  const grid = document.getElementById('mood-grid'); if (!grid) return;
-  grid.querySelectorAll('.mood-btn').forEach(btn => { btn.addEventListener('click', () => {
-    data.mood = btn.dataset.mood;
-    grid.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('mood-btn--selected'));
-    btn.classList.add('mood-btn--selected');
-  });});
-}
-
-/** 标签管理面板：增删改 */
-function bindCustomTag() {
-  const btn = document.getElementById('btn-manage-tags');
-  if (!btn) return;
-  btn.onclick = () => {
-    const panel = document.getElementById('tag-manager');
-    if (!panel) return;
-    const isOpen = panel.style.display === 'block';
-    panel.style.display = isOpen ? 'none' : 'block';
-    if (!isOpen) renderTagManager(panel);
-  };
-}
-
-function renderTagManager(panel) {
-  const allTags = getAllEmotionTags();
-  const overrides = getTagOverrides();
-  const customTags = getCustomTags();
-
-  let rows = '';
-  // 默认标签
-  EMOTION_TAGS.forEach(t => {
-    const ov = overrides[t.id];
-    const label = ov ? ov.label : t.label;
-    const emoji = ov ? ov.emoji : t.emoji;
-    const edited = !!ov;
-    rows += tagRow(t.id, emoji, label, edited, false);
-  });
-  // 自定义标签
-  customTags.forEach(t => {
-    rows += tagRow(t.id, t.emoji, t.label, false, true);
-  });
-
-  panel.innerHTML = `
-    <div class="tag-manager__title">管理标签</div>
-    <div class="tag-manager__list">${rows}</div>
-    <div class="tag-manager__add">
-      <input type="text" id="new-tag-label" placeholder="新标签名" maxlength="10">
-      <button type="button" class="btn btn--primary btn--sm" id="btn-add-new-tag">添加</button>
-    </div>
-    <button type="button" class="btn btn--outline btn--sm btn--full" id="btn-close-manager" style="margin-top:8px">完成</button>
-  `;
-
-  // 关闭
-  document.getElementById('btn-close-manager').onclick = () => { panel.style.display = 'none'; renderStep(); };
-
-  // 删除
-  panel.querySelectorAll('.tm-del').forEach(btn => { btn.onclick = () => {
-    const id = btn.dataset.id;
-    removeCustomTag(id);
-    data.emotions = data.emotions.filter(t => t !== id);
-    renderTagManager(panel);
-  };});
-
-  // 保存编辑
-  panel.querySelectorAll('.tm-save').forEach(btn => { btn.onclick = () => {
-    const row = btn.closest('.tm-row');
-    const id = row.dataset.id;
-    const label = row.querySelector('.tm-label').value.trim();
-    const emoji = row.querySelector('.tm-emoji').value.trim() || '🏷️';
-    if (!label) { showToast('标签名不能为空'); return; }
-    updateTag(id, label, emoji);
-    renderTagManager(panel);
-  };});
-
-  // 还原默认
-  panel.querySelectorAll('.tm-reset').forEach(btn => { btn.onclick = () => {
-    const id = btn.dataset.id;
-    const overrides = getTagOverrides();
-    delete overrides[id];
-    localStorage.setItem('mood-diary-tag-overrides', JSON.stringify(overrides));
-    renderTagManager(panel);
-  };});
-
-  // 添加新标签
-  document.getElementById('btn-add-new-tag').onclick = () => {
-    const label = document.getElementById('new-tag-label').value.trim();
-    if (!label) { showToast('请输入标签名'); return; }
-    const tag = addCustomTag(label);
-    data.emotions = [...data.emotions, tag.id];
-    renderTagManager(panel);
-  };
-}
-
-function tagRow(id, emoji, label, edited, isCustom) {
+function renderMoodStep() {
   return `
-    <div class="tm-row" data-id="${id}">
-      <input class="tm-emoji" value="${esc(emoji)}" maxlength="4" size="4">
-      <input class="tm-label" value="${esc(label)}" maxlength="10">
-      <button class="tm-btn tm-save" title="保存">✓</button>
-      ${edited ? `<button class="tm-btn tm-reset" data-id="${id}" title="还原默认">↩</button>` : ''}
-      ${isCustom ? `<button class="tm-btn tm-del" data-id="${id}" title="删除">×</button>` : ''}
+    <div class="mood-select">
+      <h3 class="mood-select__title">此刻的你是什么样的？</h3>
+      <p class="mood-select__sub">选一个最接近的感受，我会陪你聊一聊</p>
+      <div class="mood-select__grid">
+        ${MOOD_TAGS.map(t => `
+          <button class="mood-card" data-mood="${t.id}">
+            <span class="mood-card__emoji">${t.emoji}</span>
+            <span class="mood-card__label">${t.label}</span>
+          </button>
+        `).join('')}
+      </div>
     </div>
   `;
 }
 
-function bindReactionChips() {
-  const grid = document.getElementById('reaction-chips'); if (!grid) return;
-  grid.querySelectorAll('.tag-btn').forEach(btn => { btn.addEventListener('click', () => {
-    grid.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('tag-btn--selected'));
-    btn.classList.add('tag-btn--selected'); data.patientReaction=btn.dataset.value;
-    const ci=document.getElementById('input-reaction-custom'); if(ci) ci.value='';
-  });});
-  const ci=document.getElementById('input-reaction-custom'); if(ci) ci.addEventListener('input',()=>{if(ci.value.trim()){grid.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('tag-btn--selected'));data.patientReaction=ci.value.trim();}});
+// ====== Step 2: 心情专属提问 ======
+
+function renderPromptStep(prompts) {
+  const emoji = MOOD_TAGS.find(t => t.id === data.mood)?.emoji || '';
+  return `
+    <div class="prompt-step">
+      ${prompts.map((p, i) => `
+        <div class="prompt-block">
+          <div class="prompt-block__q">${emoji} ${p.q}</div>
+          <textarea class="prompt-block__input" id="prompt-${i}" placeholder="${p.hint}">${esc(data['prompt_' + i] || '')}</textarea>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
-function updateProgress() { const f=document.getElementById('progress-fill'),t=document.getElementById('progress-text'); if(f)f.style.width=(currentStep/totalSteps*100)+'%'; if(t)t.textContent=`步骤 ${currentStep} / ${totalSteps}`; }
-function updateNavButtons() { const p=document.getElementById('btn-prev'),n=document.getElementById('btn-next'); if(p)p.style.visibility=currentStep===1?'hidden':'visible'; if(n)n.textContent=currentStep===totalSteps?'✓ 保存记录':'下一步'; }
+// ====== 导航 ======
 
-function collectStepData() {
-  switch(currentStep) {
-    case 1: { const el=document.getElementById('input-trigger'); data.trigger=el?el.value.trim():''; break; }
-    case 2: { if(currentRole==='family'){const ci=document.getElementById('input-reaction-custom');const ch=document.querySelector('#reaction-chips .tag-btn--selected');data.patientReaction=(ci?ci.value.trim():'')||(ch?ch.dataset.value:'');} else {const el=document.getElementById('input-emotion-text');if(el)data.emotionText=el.value;} break; }
-    case 3: { if(currentRole==='self'){const el=document.getElementById('input-strategy-note');if(el)data.strategyNote=el.value.trim();} else {const el=document.getElementById('input-emotion-text');if(el)data.emotionText=el.value;} break; }
-    case 4: { if(currentRole==='self'){const el=document.getElementById('input-note');if(el)data.note=el.value.trim();} else {const el=document.getElementById('input-strategy-note');if(el)data.strategyNote=el.value.trim();} break; }
-    case 5: { const el=document.getElementById('input-note'); if(el)data.note=el.value.trim(); break; }
+function updateProgress() {
+  const fill = document.getElementById('progress-fill');
+  const text = document.getElementById('progress-text');
+  if (fill) fill.style.width = currentStep === 1 ? '33%' : '100%';
+  if (text) text.textContent = currentStep === 1 ? '选心情' : '聊一聊';
+}
+
+function updateNavButtons() {
+  const nav = document.getElementById('wizard-nav');
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  const unsureBtn = document.getElementById('btn-unsure');
+
+  if (currentStep === 1) {
+    // 两个按钮居中
+    if (nav) { nav.className = 'wizard-nav wizard-nav--two'; }
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (unsureBtn) unsureBtn.style.display = '';
+    if (nextBtn) nextBtn.textContent = '选好了';
+  } else {
+    // 三个按钮
+    if (nav) { nav.className = 'wizard-nav wizard-nav--three'; }
+    if (prevBtn) prevBtn.style.display = '';
+    if (unsureBtn) unsureBtn.style.display = 'none';
+    if (nextBtn) nextBtn.textContent = '✓ 保存记录';
   }
 }
 
-function validateStep() {
-  switch(currentStep) {
-    case 1: { const el=document.getElementById('input-trigger'); data.trigger=el?el.value.trim():''; if(!data.trigger){showToast('请简单描述发生了什么');return false;} return true; }
-    case 2: { if(currentRole==='family'){const ci=document.getElementById('input-reaction-custom');const ch=document.querySelector('#reaction-chips .tag-btn--selected');data.patientReaction=(ci?ci.value.trim():'')||(ch?ch.dataset.value:'');if(!data.patientReaction){showToast('请选择或描述TA的状态');return false;}return true;} const et=document.getElementById('input-emotion-text');if(et)data.emotionText=et.value;if(!data.emotionText||!data.emotionText.trim()){showToast('请记录你的感受');return false;}return true; }
-    case 3: { if(currentRole==='family'){const et=document.getElementById('input-emotion-text');if(et)data.emotionText=et.value;if(!data.emotionText||!data.emotionText.trim()){showToast('请记录你的感受');return false;}} else {if(data.strategies.length===0){showToast('请至少选一个你做过的事');return false;}}const el=document.getElementById('input-strategy-note');data.strategyNote=el?el.value.trim():'';return true; }
-    case 4: { if(currentRole==='self'){if(!data.mood){showToast('请选择一个心情');return false;}} else {if(data.strategies.length===0){showToast('请至少选一个应对方式');return false;}}const el=document.getElementById('input-note');data.note=el?el.value.trim():'';return true; }
-    case 5: { if(!data.mood){showToast('请选择一个心情');return false;} const el=document.getElementById('input-note');data.note=el?el.value.trim():'';return true; }
-  }
-  return true;
+// ====== 收集数据 ======
+
+function collectPromptData(prompts) {
+  prompts.forEach((_, i) => {
+    const el = document.getElementById('prompt-' + i);
+    if (el) data['prompt_' + i] = el.value;
+  });
+  // 合并为 content
+  data.content = prompts.map((p, i) => {
+    const answer = data['prompt_' + i] || '';
+    return answer ? `${p.q}\n${answer}` : '';
+  }).filter(Boolean).join('\n\n');
 }
 
-export async function nextStep() { collectStepData(); if(!validateStep())return; if(currentStep<totalSteps){currentStep++;renderStep();} else await saveCurrentEntry(); }
-export function prevStep() { collectStepData(); if(currentStep>1){currentStep--;renderStep();} }
+export async function nextStep() {
+  if (currentStep === 1) {
+    // 收集心情选择
+    const selected = document.querySelector('.mood-card--selected');
+    if (!selected) { showToast('请先选择一个心情'); return; }
+    data.mood = selected.dataset.mood;
+    currentStep = 2;
+    renderStep();
+  } else {
+    // 收集回答并保存
+    const prompts = PROMPTS[currentRole][data.mood];
+    collectPromptData(prompts);
+    if (!data.content.trim()) { showToast('请至少回答一个问题'); return; }
+    await saveCurrentEntry();
+  }
+}
+
+export function prevStep() {
+  if (currentStep > 1) { currentStep = 1; renderStep(); }
+}
 
 async function saveCurrentEntry() {
-  try { collectStepData(); data.createdAt=Date.now(); data.role=currentRole; await saveEntry(data); showToast('记录已保存 💚'); setTimeout(()=>{resetData();window.location.hash='#record';},800); }
-  catch(err){console.error(err);showToast('保存失败');}
+  try {
+    data.createdAt = Date.now();
+    await saveEntry(data);
+    showToast('记录已保存 💚');
+    setTimeout(() => { resetData(); window.location.hash = '#record'; }, 800);
+  } catch (err) { console.error(err); showToast('保存失败'); }
 }
 
-function esc(str) { if(!str)return''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(str) { if (!str) return ''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// 需要在 renderStep 后绑定心情卡片点击
+export function bindMoodCards() {
+  document.querySelectorAll('.mood-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('mood-card--selected'));
+      card.classList.add('mood-card--selected');
+      data.mood = card.dataset.mood;
+    });
+  });
+}

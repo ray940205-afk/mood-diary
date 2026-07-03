@@ -74,6 +74,19 @@
           </button>
         </div>
       </section>
+      <section class="home-section">
+        <div class="home-section__header">
+          <i data-lucide="moon" class="section-icon"></i>
+          <span class="home-section__title">梦境记录</span>
+        </div>
+        <div class="home-section__actions">
+          <button class="entry-btn entry-btn--dream" data-nav="dream-entry">
+            <span class="entry-btn__icon">🌙</span>
+            <span class="entry-btn__title">记录梦境</span>
+            <span class="entry-btn__desc">记录并解读你的梦</span>
+          </button>
+        </div>
+      </section>
       <div class="home-quick-stats" id="quick-stats"></div>
     </main>
 
@@ -88,7 +101,8 @@
       <div class="progress-text" id="progress-text"></div>
       <div class="wizard-container" id="wizard-container"></div>
       <div class="wizard-nav" id="wizard-nav">
-        <button class="btn btn--outline" id="btn-prev" style="visibility:hidden">上一步</button>
+        <button class="btn btn--outline" id="btn-prev" style="display:none">上一步</button>
+        <button class="btn btn--outline" id="btn-unsure">没想好</button>
         <button class="btn btn--primary" id="btn-next">下一步</button>
       </div>
     </main>
@@ -102,25 +116,34 @@
       </div>
       <form id="free-form" class="free-form">
         <div class="form-group"><label class="form-label">日期</label><input type="date" id="free-date" class="form-input" required></div>
-        <div class="form-group"><label class="form-label">标题（可选）</label><input type="text" id="free-title-input" class="form-input"></div>
         <div class="form-group"><label class="form-label" id="free-content-label">内容</label><textarea id="free-content" class="form-textarea" rows="8"></textarea></div>
-        <!-- 图片预览区 -->
         <div class="image-previews" id="image-previews"></div>
-        <!-- 插入图片按钮 -->
-        <button type="button" class="btn btn--outline btn--sm" id="btn-add-image" style="margin-bottom:12px"><i data-lucide="image" class="icon--sm"></i> 插入图片</button>
-        <input type="file" id="image-input" accept="image/*" multiple style="display:none">
-        <!-- 情绪标签 -->
-        <details class="tag-section">
-          <summary class="tag-section__summary">🏷️ 插入标签</summary>
-          <div class="form-group"><label class="form-label form-label--sm">点击标签插入到内容中</label><div class="tag-grid" id="free-emotions"></div></div>
-        </details>
+        <div class="input-toolbar">
+          <button type="button" class="toolbar-btn" id="btn-add-image"><i data-lucide="image" class="icon--sm"></i> 插入图片</button>
+          <input type="file" id="image-input" accept="image/*" multiple style="display:none">
+          <button type="button" class="toolbar-btn" id="btn-toggle-tags"><i data-lucide="tags" class="icon--sm"></i> 插入标签</button>
+        </div>
+        <div class="free-tag-panel" id="free-tag-panel" style="display:none"></div>
         <button type="submit" class="btn btn--primary btn--full">保存记录</button>
       </form>
     </main>
 
+    <!-- 梦境记录 -->
+    <main id="view-dream-entry" class="view view--hidden">
+      <div class="page-header">
+        <button class="btn-back" data-nav="record"><i data-lucide="chevron-left" class="icon--sm"></i> 返回</button>
+        <h2 class="page-title">梦境记录</h2>
+        <div style="width:48px"></div>
+      </div>
+      <div class="form-group"><label class="form-label">描述你的梦境</label><textarea id="dream-content" class="form-textarea" rows="8" placeholder="把你记得的都写下来吧——场景、人物、颜色、情绪..."></textarea></div>
+      <button class="btn btn--outline btn--full" id="btn-interpret-dream" style="margin-bottom:12px"><i data-lucide="search" class="icon--sm"></i> 解析梦境</button>
+      <div id="dream-result" class="dream-result" style="display:none"></div>
+      <div class="form-group"><label class="form-label">醒来时的心情</label><div class="mood-grid" id="dream-mood"></div></div>
+      <button class="btn btn--primary btn--full" id="btn-save-dream">保存梦境</button>
+    </main>
+
     <!-- ====== 3. 情绪笔记 ====== -->
     <main id="view-notes" class="view view--hidden">
-      <div class="page-header"><h2 class="page-title">情绪笔记</h2><div style="width:48px"></div></div>
       <div class="history-toolbar">
         <div class="filter-row">
           <select id="filter-month" class="filter-select"></select>
@@ -134,6 +157,7 @@
             <option value="all">全部类型</option>
             <option value="guided">你问我答</option>
             <option value="free">随记</option>
+            <option value="dream">梦境记录</option>
             <option value="quote">收藏语录</option>
           </select>
         </div>
