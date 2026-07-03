@@ -61,7 +61,6 @@ export async function renderManage() {
       <h3 class="manage-section__title"><i data-lucide="message-square-heart" class="manage-icon"></i> 反馈建议</h3>
       <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="你的建议对我们很重要～"></textarea>
       <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
-      <button class="btn btn--outline btn--sm btn--full" id="btn-export-feedback" style="margin-top:8px"><i data-lucide="download" class="icon--sm"></i> 导出所有反馈</button>
       <div id="feedback-list" style="margin-top:16px"></div>
     </section>
 
@@ -135,21 +134,6 @@ export async function renderManage() {
     showToast('感谢反馈 💚');
     document.getElementById('feedback-text').value = '';
     renderFeedbackList();
-  });
-
-  // 导出反馈
-  document.getElementById('btn-export-feedback')?.addEventListener('click', async () => {
-    const all = await getAllEntries();
-    const feedbacks = all.filter(e => e.type === 'feedback').sort((a, b) => b.createdAt - a.createdAt);
-    if (feedbacks.length === 0) { showToast('暂无反馈可导出'); return; }
-    const text = feedbacks.map(f => `[${f.date}] ${f.content}`).join('\n\n---\n\n');
-    // 下载为文件
-    const blob = new Blob([text], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `情绪日记反馈_${today()}.txt`;
-    a.click();
-    showToast(`已导出 ${feedbacks.length} 条反馈`);
   });
 
   // 渲染历史反馈
