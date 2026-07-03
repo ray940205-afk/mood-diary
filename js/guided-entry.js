@@ -107,7 +107,7 @@ function renderPromptStep(prompts) {
   var blocks = prompts.map(function(p, i) {
     var val = data['prompt_' + i] || '';
     return '<div class="prompt-block">' +
-      '<div class="prompt-block__q">' + emoji + ' ' + prefix + p.q + '</div>' +
+      '<div class="prompt-block__q">🦄 ' + prefix + p.q + '</div>' +
       '<textarea class="prompt-block__input" id="prompt-' + i + '" placeholder="' + p.hint + '">' + esc(val) + '</textarea>' +
       '</div>';
   }).join('');
