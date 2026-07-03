@@ -3,7 +3,7 @@
  */
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
-import { uuid, today, showToast, EMOTION_TAGS, MOOD_TAGS } from './utils.js';
+import { uuid, today, showToast, EMOTION_TAGS, MOOD_TAGS, getAllEmotionTags } from './utils.js';
 // Note: strategy tags removed from 随记 per user request
 
 let selectedMood = '';
@@ -117,7 +117,8 @@ function renderMood() {
 function renderTags() {
   const container = document.getElementById('free-emotions');
   if (!container) return;
-  container.innerHTML = EMOTION_TAGS.map(t => `<button type="button" class="tag-btn" data-tag="${t.id}" data-text="${t.emoji} ${t.label}">${t.emoji} ${t.label}</button>`).join('');
+  const allTags = getAllEmotionTags();
+  container.innerHTML = allTags.map(t => `<button type="button" class="tag-btn" data-tag="${t.id}" data-text="${t.emoji} ${t.label}">${t.emoji} ${t.label}</button>`).join('');
 
   container.querySelectorAll('.tag-btn').forEach(btn => {
     btn.addEventListener('click', () => {

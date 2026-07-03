@@ -3,7 +3,7 @@
  */
 import { saveEntry } from './db.js';
 import { currentRole } from './app.js';
-import { uuid, today, showToast, EMOTION_TAGS, SELF_STRATEGY_TAGS, FAMILY_STRATEGY_TAGS, REACTION_OPTIONS, MOOD_TAGS } from './utils.js';
+import { uuid, today, showToast, EMOTION_TAGS, SELF_STRATEGY_TAGS, FAMILY_STRATEGY_TAGS, REACTION_OPTIONS, MOOD_TAGS, getAllEmotionTags, addCustomTag, removeCustomTag, getCustomTags } from './utils.js';
 
 let currentStep = 1, totalSteps = 5;
 let data = {};
@@ -28,14 +28,33 @@ function renderStep() {
 }
 
 function selfStep(c) {
-  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=step2(); setTimeout(()=>bindTags('emotions'),0); break; case 3: c.innerHTML=step3(); setTimeout(()=>bindTags('strategies'),0); break; case 4: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
+  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=step2(); setTimeout(()=>{bindTags('emotions');bindCustomTag();},0); break; case 3: c.innerHTML=step3(); setTimeout(()=>bindTags('strategies'),0); break; case 4: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
 }
 function familyStep(c) {
-  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=stepF2(); setTimeout(()=>bindReactionChips(),0); break; case 3: c.innerHTML=step2(); setTimeout(()=>bindTags('emotions'),0); break; case 4: c.innerHTML=stepF4(); setTimeout(()=>bindTags('strategies'),0); break; case 5: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
+  switch (currentStep) { case 1: c.innerHTML=step1(); break; case 2: c.innerHTML=stepF2(); setTimeout(()=>bindReactionChips(),0); break; case 3: c.innerHTML=step2(); setTimeout(()=>{bindTags('emotions');bindCustomTag();},0); break; case 4: c.innerHTML=stepF4(); setTimeout(()=>bindTags('strategies'),0); break; case 5: c.innerHTML=step4(); setTimeout(()=>bindMood(),0); break; }
 }
 
 function step1() { return ws('发生了什么？',`<textarea id="input-trigger">${esc(data.trigger)}</textarea>`,'💡 客观记录事情的起因和经过'); }
-function step2() { return ws('我当时感受到了什么？',`<textarea id="input-emotion-text" class="wizard-textarea-emotion">${esc(data.emotionText)}</textarea><div class="tag-grid" id="tag-grid-emotions">${EMOTION_TAGS.map(t=>tagBtn(t,data.emotions)).join('')}</div>`,'💡 点击下方标签插入，也可以自己输入'); }
+function step2() {
+  const allTags = getAllEmotionTags();
+  const customTags = getCustomTags();
+  return ws('我当时感受到了什么？',
+    `<textarea id="input-emotion-text" class="wizard-textarea-emotion">${esc(data.emotionText)}</textarea>
+     <div class="tag-grid" id="tag-grid-emotions">
+       ${allTags.map(t => {
+         const isCustom = t.id.startsWith('custom_');
+         const delBtn = isCustom ? `<span class="tag-del" data-del="${t.id}">×</span>` : '';
+         return `<button class="tag-btn ${data.emotions.includes(t.id)?'tag-btn--selected':''} ${isCustom?'tag-btn--custom':''}" data-tag="${t.id}">${t.emoji} ${t.label}${delBtn}</button>`;
+       }).join('')}
+       <button class="tag-btn tag-btn--add" id="btn-add-tag">✏️ 自定义</button>
+     </div>
+     <div class="custom-tag-form" id="custom-tag-form" style="display:none">
+       <input type="text" id="input-custom-tag" placeholder="输入标签名，如：委屈" maxlength="10">
+       <button type="button" class="btn btn--primary btn--sm" id="btn-save-custom-tag">添加</button>
+     </div>`,
+    '💡 点击标签插入到记录框，也可以自己输入。点击「自定义」创建你自己的标签'
+  );
+}
 function step3() { return ws('我做了什么？',`<div class="tag-grid" id="tag-grid-strategies">${SELF_STRATEGY_TAGS.map(t=>tagBtn(t,data.strategies)).join('')}</div><textarea id="input-strategy-note" class="wizard-textarea-sm">${esc(data.strategyNote)}</textarea>`,'💡 哪怕是很小的尝试也值得记录'); }
 function stepF2() { const chips=REACTION_OPTIONS.map(r=>`<button class="tag-btn ${data.patientReaction===r?'tag-btn--selected':''}" data-value="${esc(r)}">${r}</button>`).join(''); return ws('TA 当时的状态',`<div class="tag-grid" id="reaction-chips">${chips}</div><input type="text" id="input-reaction-custom" value="${esc(data.patientReaction&&!REACTION_OPTIONS.includes(data.patientReaction)?data.patientReaction:'')}">`,'💡 选择一个最接近的，或自己描述'); }
 function stepF4() { return ws('我是怎么应对的？',`<div class="tag-grid" id="tag-grid-strategies">${FAMILY_STRATEGY_TAGS.map(t=>tagBtn(t,data.strategies)).join('')}</div><textarea id="input-strategy-note" class="wizard-textarea-sm">${esc(data.strategyNote)}</textarea>`,'💡 记录你实际做了什么'); }
@@ -68,6 +87,36 @@ function bindMood() {
     grid.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('mood-btn--selected'));
     btn.classList.add('mood-btn--selected');
   });});
+}
+
+/** 自定义标签：展开/收起表单、添加、删除 */
+function bindCustomTag() {
+  const addBtn = document.getElementById('btn-add-tag');
+  const form = document.getElementById('custom-tag-form');
+  const input = document.getElementById('input-custom-tag');
+  const saveBtn = document.getElementById('btn-save-custom-tag');
+
+  if (addBtn) addBtn.onclick = () => { form.style.display = 'flex'; input.focus(); };
+  if (saveBtn) saveBtn.onclick = () => {
+    const label = (input?.value || '').trim();
+    if (!label) { showToast('请输入标签名'); return; }
+    const tag = addCustomTag(label);
+    data.emotions = [...data.emotions, tag.id];
+    // 重新渲染步骤
+    renderStep();
+  };
+  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBtn?.click(); });
+
+  // 删除自定义标签
+  document.querySelectorAll('.tag-del').forEach(del => {
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tagId = del.dataset.del;
+      removeCustomTag(tagId);
+      data.emotions = data.emotions.filter(t => t !== tagId);
+      renderStep();
+    });
+  });
 }
 
 function bindReactionChips() {

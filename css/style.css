@@ -565,6 +565,50 @@ body {
   font-weight: 500;
 }
 
+.tag-btn--add {
+  border-style: dashed;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.tag-btn--custom {
+  position: relative;
+  padding-right: 28px;
+}
+
+.tag-del {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.custom-tag-form {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.custom-tag-form input {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  background: var(--color-card);
+}
+
 /* ====== Rating Slider ====== */
 .rating-group {
   display: flex;

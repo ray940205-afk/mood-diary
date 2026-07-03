@@ -97,6 +97,34 @@ export function debounce(fn, delay = 300) {
   };
 }
 
+// ====== 自定义标签 ======
+const CUSTOM_TAGS_KEY = 'mood-diary-custom-emotion-tags';
+
+/** 获取用户自定义情绪标签 */
+export function getCustomTags() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_TAGS_KEY)) || []; } catch (_) { return []; }
+}
+
+/** 添加自定义标签 */
+export function addCustomTag(label, emoji = '🏷️') {
+  const tags = getCustomTags();
+  const id = 'custom_' + Date.now();
+  tags.push({ id, label, emoji });
+  localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(tags));
+  return { id, label, emoji };
+}
+
+/** 删除自定义标签 */
+export function removeCustomTag(id) {
+  const tags = getCustomTags().filter(t => t.id !== id);
+  localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(tags));
+}
+
+/** 获取全部情绪标签（默认 + 自定义） */
+export function getAllEmotionTags() {
+  return [...EMOTION_TAGS, ...getCustomTags()];
+}
+
 // ====== 情绪标签（两个板块共用） ======
 export const EMOTION_TAGS = [
   { id: 'helpless', label: '无助', emoji: '🥺' },
