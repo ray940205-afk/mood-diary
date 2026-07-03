@@ -58,9 +58,12 @@ export async function renderManage() {
 
     <!-- 反馈建议 -->
     <section class="manage-section">
-      <h3 class="manage-section__title"><i data-lucide="message-square-heart" class="manage-icon"></i> 反馈建议</h3>
-      <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="你的建议对我们很重要～"></textarea>
-      <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
+      <h3 class="manage-section__title" id="feedback-toggle" style="cursor:pointer"><i data-lucide="message-square-heart" class="manage-icon"></i> 反馈建议 <span id="feedback-arrow" style="font-size:12px;color:var(--color-text-muted)">▶</span></h3>
+      <div id="feedback-form" style="display:none">
+        <input type="text" id="feedback-subject" class="form-input" placeholder="反馈主题（如：希望增加暗色模式）" maxlength="50" style="margin-bottom:8px">
+        <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="具体反馈内容～"></textarea>
+        <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
+      </div>
       <div id="feedback-list" style="margin-top:16px"></div>
     </section>
 
@@ -122,23 +125,35 @@ export async function renderManage() {
     showToast('主题颜色已更新 🎨');
   });
 
-  // 反馈
+  // 展开/收起反馈表单
+  document.getElementById('feedback-toggle')?.addEventListener('click', () => {
+    const form = document.getElementById('feedback-form');
+    const arrow = document.getElementById('feedback-arrow');
+    const isOpen = form.style.display === 'block';
+    form.style.display = isOpen ? 'none' : 'block';
+    arrow.textContent = isOpen ? '▶' : '▼';
+    if (!isOpen) document.getElementById('feedback-subject')?.focus();
+  });
+
+  // 提交反馈
   document.getElementById('btn-feedback')?.addEventListener('click', async () => {
+    const subject = document.getElementById('feedback-subject')?.value.trim() || '未填写主题';
     const text = document.getElementById('feedback-text')?.value.trim();
     if (!text) { showToast('请填写反馈内容'); return; }
+    const fullContent = `【${subject}】${text}`;
     await saveEntry({
       id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(),
-      content: text,
+      content: fullContent,
     });
-    // 发送到 Vercel API
     try {
       await fetch('https://cerulean-cheesecake-665fbb.netlify.app/.netlify/functions/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: text }),
+        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', content: fullContent }),
       });
     } catch (_) {}
     showToast('感谢反馈 💚');
+    document.getElementById('feedback-subject').value = '';
     document.getElementById('feedback-text').value = '';
     renderFeedbackList();
   });
