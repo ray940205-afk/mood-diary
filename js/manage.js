@@ -64,7 +64,10 @@ export async function renderManage() {
         <textarea id="feedback-text" class="form-textarea" rows="3" placeholder="具体反馈内容～"></textarea>
         <button class="btn btn--primary btn--full" id="btn-feedback" style="margin-top:12px">提交反馈</button>
       </div>
-      <div id="feedback-list" style="margin-top:16px"></div>
+      <div id="feedback-list" style="margin-top:16px">
+        <button class="btn btn--outline btn--sm btn--full" id="btn-toggle-history" style="display:none">查看历史反馈</button>
+        <div id="feedback-items" style="display:none;margin-top:8px"></div>
+      </div>
     </section>
 
     <div style="text-align:center;padding:24px 0;color:var(--color-text-muted);font-size:var(--font-size-xs)">
@@ -163,34 +166,42 @@ export async function renderManage() {
 }
 
 async function renderFeedbackList() {
-  const container = document.getElementById('feedback-list');
-  if (!container) return;
+  const toggleBtn = document.getElementById('btn-toggle-history');
+  const itemsContainer = document.getElementById('feedback-items');
+  if (!toggleBtn || !itemsContainer) return;
+
   const all = await getAllEntries();
   const feedbacks = all.filter(e => e.type === 'feedback').sort((a, b) => b.createdAt - a.createdAt);
-  if (feedbacks.length === 0) { container.innerHTML = ''; return; }
-  container.innerHTML = `
-    <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:8px">历史反馈 (${feedbacks.length}条)</div>
-    ${feedbacks.map((f, i) => {
-      const subject = f.content.slice(0, 20) + (f.content.length > 20 ? '...' : '');
-      return `
-        <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px;cursor:pointer">
-          <div class="feedback-item__header" data-idx="${i}" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);white-space:nowrap">${f.date}</span>
-            <span style="flex:1;font-size:var(--font-size-sm);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subject}</span>
-            <span class="feedback-arrow" data-idx="${i}" style="font-size:10px;color:var(--color-text-muted);transition:transform 0.2s">▶</span>
-          </div>
-          <div class="feedback-item__body" data-idx="${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border-light);font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:1.7;white-space:pre-wrap">${f.content}</div>
-        </div>
-      `;
-    }).join('')}
-  `;
 
-  // 点击展开/收起
-  container.querySelectorAll('.feedback-item__header, .feedback-arrow').forEach(el => {
+  if (feedbacks.length === 0) {
+    toggleBtn.style.display = 'none';
+    itemsContainer.style.display = 'none';
+    return;
+  }
+
+  toggleBtn.style.display = '';
+  toggleBtn.textContent = `历史反馈 (${feedbacks.length}条) ▶`;
+
+  itemsContainer.innerHTML = feedbacks.map((f, i) => {
+    const subject = f.content.slice(0, 20) + (f.content.length > 20 ? '...' : '');
+    return `
+      <div class="feedback-item" style="background:var(--color-card);border-radius:var(--radius-md);padding:var(--space-sm) var(--space-md);margin-bottom:6px;cursor:pointer">
+        <div class="feedback-item__header" data-idx="${i}" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);white-space:nowrap">${f.date}</span>
+          <span style="flex:1;font-size:var(--font-size-sm);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subject}</span>
+          <span class="feedback-arrow" data-idx="${i}" style="font-size:10px;color:var(--color-text-muted);transition:transform 0.2s">▶</span>
+        </div>
+        <div class="feedback-item__body" data-idx="${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border-light);font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:1.7;white-space:pre-wrap">${f.content}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 单条展开
+  itemsContainer.querySelectorAll('.feedback-item__header, .feedback-arrow').forEach(el => {
     el.addEventListener('click', () => {
       const idx = el.dataset.idx;
-      const body = container.querySelector(`.feedback-item__body[data-idx="${idx}"]`);
-      const arrow = container.querySelector(`.feedback-arrow[data-idx="${idx}"]`);
+      const body = itemsContainer.querySelector(`.feedback-item__body[data-idx="${idx}"]`);
+      const arrow = itemsContainer.querySelector(`.feedback-arrow[data-idx="${idx}"]`);
       if (body.style.display === 'none') {
         body.style.display = 'block';
         arrow.style.transform = 'rotate(90deg)';
@@ -200,4 +211,11 @@ async function renderFeedbackList() {
       }
     });
   });
+
+  // 总开关
+  toggleBtn.onclick = () => {
+    const isOpen = itemsContainer.style.display === 'block';
+    itemsContainer.style.display = isOpen ? 'none' : 'block';
+    toggleBtn.textContent = `历史反馈 (${feedbacks.length}条) ${isOpen ? '▶' : '▼'}`;
+  };
 }
