@@ -98,7 +98,13 @@ export async function renderManage() {
     if (!text) { showToast('请填写反馈内容'); return; }
     var fullContent = catLabel + ' 【' + subjVal + '】' + text;
     await saveEntry({ id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(), content: fullContent, category: category });
-    // 云端函数暂不可用（Netlify 额度用完），反馈保存在本地
+    try {
+      await fetch('https://aryasdiary.netlify.app/.netlify/functions/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', user_name: getUserName() || '未命名', content: fullContent, category: category }),
+      });
+    } catch (_) {}
     var toast = document.getElementById('toast');
     if (toast) {
       toast.textContent = '感谢您的反馈，我将用心聆听 💚';
