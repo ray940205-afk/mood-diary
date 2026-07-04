@@ -1008,8 +1008,18 @@ input[type="date"].form-input {
 .entry-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: var(--space-sm);
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.entry-card__header > div {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .entry-card__date {
@@ -1019,17 +1029,28 @@ input[type="date"].form-input {
 }
 
 .entry-card__type {
-  font-size: var(--font-size-xs);
-  padding: 2px var(--space-sm);
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .entry-card__type--free {
   background: var(--color-accent-light);
   color: #B8765A;
+}
+
+.mood-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .entry-card__summary {
