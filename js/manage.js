@@ -3,7 +3,7 @@
  */
 import { getStats, saveEntry, getAllEntries, deleteEntry } from './db.js';
 import { showToast, uuid, today } from './utils.js';
-import { getUserName } from './user.js';
+import { getUserName, setUserName } from './user.js';
 
 window.pickColor = function(color) {
   document.body.style.backgroundColor = color === 'lavender' ? '#E8DCFF' : color === 'peach' ? '#FFE0D0' : color === 'blue' ? '#D0E4FF' : '#FFF9F3';
@@ -41,6 +41,31 @@ export async function renderManage() {
     document.querySelectorAll('.color-dot').forEach(function(d) { d.classList.remove('active'); });
     dot.classList.add('active');
     showToast('主题颜色已更新 🎨');
+  });
+
+  // WHO AM I - 昵称管理
+  var whoToggle = document.getElementById('whoami-toggle');
+  if (whoToggle) whoToggle.addEventListener('click', function() {
+    var form = document.getElementById('whoami-form');
+    var arrow = document.getElementById('whoami-arrow');
+    var isOpen = form.style.display === 'block';
+    form.style.display = isOpen ? 'none' : 'block';
+    arrow.textContent = isOpen ? '▶' : '▼';
+    if (!isOpen) {
+      var nameInput = document.getElementById('whoami-name');
+      if (nameInput) { nameInput.value = getUserName(); nameInput.focus(); }
+    }
+  });
+
+  var whoSave = document.getElementById('whoami-save');
+  if (whoSave) whoSave.addEventListener('click', function() {
+    var input = document.getElementById('whoami-name');
+    var newName = input ? input.value.trim() : '';
+    if (!newName) { showToast('名字不能为空哦'); return; }
+    setUserName(newName);
+    showToast('你好，' + newName + ' 🦄');
+    document.getElementById('whoami-form').style.display = 'none';
+    document.getElementById('whoami-arrow').textContent = '▶';
   });
 
   // 击登闻鼓 toggle
@@ -119,6 +144,17 @@ function buildManageHTML(stats) {
   h += '<span class="color-dot" style="background:#B8A0D0" onclick="pickColor(\'lavender\')"></span>';
   h += '<span class="color-dot" style="background:#F0B8A0" onclick="pickColor(\'peach\')"></span>';
   h += '<span class="color-dot" style="background:#A0C8E8" onclick="pickColor(\'blue\')"></span>';
+  h += '</div></section>';
+
+  // 击登闻鼓
+  h += '<section class="manage-section">';
+  // WHO AM I
+  h += '<section class="manage-section">';
+  h += '<h3 class="manage-section__title" id="whoami-toggle" style="cursor:pointer">🦄 WHO AM I？ <span id="whoami-arrow" style="font-size:12px;color:#999">▶</span></h3>';
+  h += '<div id="whoami-form" style="display:none">';
+  h += '<p style="font-size:13px;color:#999;margin-bottom:8px">修改你的昵称，我会用它来称呼你</p>';
+  h += '<input type="text" id="whoami-name" class="form-input" placeholder="你的名字" maxlength="20" value="' + (getUserName() || '') + '">';
+  h += '<button class="btn btn--primary btn--full" id="whoami-save" style="margin-top:8px">保存</button>';
   h += '</div></section>';
 
   // 击登闻鼓
