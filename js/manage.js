@@ -116,6 +116,16 @@ export async function renderManage() {
 
 function buildManageHTML(stats) {
   var h = '';
+
+  // WHO AM I（最上方）
+  h += '<section class="manage-section">';
+  h += '<h3 class="manage-section__title" id="whoami-toggle" style="cursor:pointer">🦄 WHO AM I？ <span id="whoami-arrow" style="font-size:12px;color:#999">▶</span></h3>';
+  h += '<div id="whoami-form" style="display:none">';
+  h += '<p style="font-size:13px;color:#999;margin-bottom:8px">修改你的昵称，我会用它来称呼你</p>';
+  h += '<input type="text" id="whoami-name" class="form-input" placeholder="你的名字" maxlength="20" value="' + (getUserName() || '') + '">';
+  h += '<button class="btn btn--primary btn--full" id="whoami-save" style="margin-top:8px">保存</button>';
+  h += '</div></section>';
+
   // 统计
   h += '<section class="manage-section">';
   h += '<h3 class="manage-section__title">📋 本月统计</h3>';
@@ -148,15 +158,6 @@ function buildManageHTML(stats) {
 
   // 击登闻鼓
   h += '<section class="manage-section">';
-  // WHO AM I
-  h += '<section class="manage-section">';
-  h += '<h3 class="manage-section__title" id="whoami-toggle" style="cursor:pointer">🦄 WHO AM I？ <span id="whoami-arrow" style="font-size:12px;color:#999">▶</span></h3>';
-  h += '<div id="whoami-form" style="display:none">';
-  h += '<p style="font-size:13px;color:#999;margin-bottom:8px">修改你的昵称，我会用它来称呼你</p>';
-  h += '<input type="text" id="whoami-name" class="form-input" placeholder="你的名字" maxlength="20" value="' + (getUserName() || '') + '">';
-  h += '<button class="btn btn--primary btn--full" id="whoami-save" style="margin-top:8px">保存</button>';
-  h += '</div></section>';
-
   // 击登闻鼓
   h += '<section class="manage-section">';
   h += '<h3 class="manage-section__title" id="feedback-toggle" style="cursor:pointer">💬 击登闻鼓 <span id="feedback-arrow" style="font-size:12px;color:#999">▶</span></h3>';
