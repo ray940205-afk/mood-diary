@@ -63,7 +63,8 @@
 
 <script>
 // ══════ 配置 ══════
-const API_URL = 'https://aryasdiary.netlify.app/.netlify/functions/feedback';
+// 直接从 GitHub 读取反馈数据
+const FEEDBACK_URL = 'https://raw.githubusercontent.com/ray940205-afk/mood-diary/main/data/feedbacks.json';
 const ADMIN_PASSWORD = 'ray171215.';
 
 // ══════ 登录 ══════
@@ -93,8 +94,8 @@ async function loadData() {
   const list = document.getElementById('feedback-list');
   list.innerHTML = '<div class="empty">加载中...</div>';
   try {
-    const res = await fetch(API_URL + '?pw=' + ADMIN_PASSWORD);
-    if (res.status === 401) { list.innerHTML = '<div class="empty">密码错误</div>'; return; }
+    const res = await fetch(FEEDBACK_URL + '?t=' + Date.now());
+    if (!res.ok) { list.innerHTML = '<div class="empty" style="color:#e06060">加载失败</div>'; return; }
     const data = await res.json();
     document.getElementById('stat-total').textContent = data.length;
     if (data.length === 0) {

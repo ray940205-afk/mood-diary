@@ -4,6 +4,7 @@
 import { getStats, saveEntry, getAllEntries, deleteEntry } from './db.js';
 import { showToast, uuid, today } from './utils.js';
 import { getUserName, setUserName } from './user.js';
+import { submitFeedback } from './github-feedback.js';
 
 window.pickColor = function(color) {
   document.body.style.backgroundColor = color === 'lavender' ? '#E8DCFF' : color === 'peach' ? '#FFE0D0' : color === 'blue' ? '#D0E4FF' : '#FFF9F3';
@@ -41,6 +42,29 @@ export async function renderManage() {
     document.querySelectorAll('.color-dot').forEach(function(d) { d.classList.remove('active'); });
     dot.classList.add('active');
     showToast('主题颜色已更新 🎨');
+  });
+
+  // Token 管理
+  var tokenToggle = document.getElementById('token-toggle');
+  if (tokenToggle) tokenToggle.addEventListener('click', function() {
+    var form = document.getElementById('token-form');
+    var arrow = document.getElementById('token-arrow');
+    var isOpen = form.style.display === 'block';
+    form.style.display = isOpen ? 'none' : 'block';
+    arrow.textContent = isOpen ? '▶' : '▼';
+  });
+  var tokenSave = document.getElementById('token-save');
+  if (tokenSave) tokenSave.addEventListener('click', function() {
+    var val = document.getElementById('token-input').value.trim();
+    if (!val) { showToast('请输入 Token'); return; }
+    localStorage.setItem('mood-diary-gh-token', val);
+    showToast('Token 已保存 ✅');
+  });
+  var tokenClear = document.getElementById('token-clear');
+  if (tokenClear) tokenClear.addEventListener('click', function() {
+    localStorage.removeItem('mood-diary-gh-token');
+    document.getElementById('token-input').value = '';
+    showToast('Token 已清除');
   });
 
   // WHO AM I - 昵称管理
@@ -98,13 +122,7 @@ export async function renderManage() {
     if (!text) { showToast('请填写反馈内容'); return; }
     var fullContent = catLabel + ' 【' + subjVal + '】' + text;
     await saveEntry({ id: uuid(), type: 'feedback', role: 'self', date: today(), createdAt: Date.now(), content: fullContent, category: category });
-    try {
-      await fetch('https://aryasdiary.netlify.app/.netlify/functions/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: localStorage.getItem('mood-diary-device-id') || 'unknown', user_name: getUserName() || '未命名', content: fullContent, category: category }),
-      });
-    } catch (_) {}
+    submitFeedback(getUserName() || '未命名', category, subjVal, text);
     var toast = document.getElementById('toast');
     if (toast) {
       toast.textContent = '感谢您的反馈，我将用心聆听 💚';
@@ -122,6 +140,17 @@ export async function renderManage() {
 
 function buildManageHTML(stats) {
   var h = '';
+
+  // Token 配置
+  var hasToken = !!localStorage.getItem('mood-diary-gh-token');
+  h += '<section class="manage-section">';
+  h += '<h3 class="manage-section__title" id="token-toggle" style="cursor:pointer">🔑 反馈通道 ' + (hasToken ? '✅' : '⚠️') + ' <span id="token-arrow" style="font-size:12px;color:#999">▶</span></h3>';
+  h += '<div id="token-form" style="display:none">';
+  h += '<p style="font-size:13px;color:#999;margin-bottom:8px">输入 GitHub Token 以启用反馈云同步（<a href="https://github.com/settings/tokens" target="_blank">获取Token</a>，勾选 public_repo 即可）</p>';
+  h += '<input type="password" id="token-input" class="form-input" placeholder="ghp_..." value="' + (localStorage.getItem('mood-diary-gh-token') || '') + '">';
+  h += '<button class="btn btn--primary btn--full" id="token-save" style="margin-top:8px">保存</button>';
+  if (hasToken) h += '<button class="btn btn--danger btn--sm btn--full" id="token-clear" style="margin-top:4px">清除 Token</button>';
+  h += '</div></section>';
 
   // WHO AM I（最上方）
   h += '<section class="manage-section">';
