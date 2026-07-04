@@ -10,26 +10,59 @@ let currentMonth = 'all', currentMood = 'all', currentType = 'all';
 
 export async function renderNotes() {
   currentMonth = 'all'; currentMood = 'all'; currentType = 'all'; expandedCards.clear();
-  populateMonthFilter();
+  populateFilters();
   await loadAndRender();
 }
 
-function populateMonthFilter() {
-  const sel = document.getElementById('filter-month');
-  if (!sel) return;
-  const now = new Date();
-  let html = '<option value="all">全部月份</option>';
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const label = `${d.getFullYear()}年${d.getMonth()+1}月`;
-    html += `<option value="${val}" ${currentMonth===val?'selected':''}>${label}</option>`;
-  }
-  sel.innerHTML = html;
-  sel.onchange = async () => { currentMonth = sel.value; expandedCards.clear(); await loadAndRender(); };
+function renderChips(containerId, chips, currentValue, onChange) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = chips.map(function(c) {
+    var active = currentValue === c.value ? ' chip--active' : '';
+    return '<button class="chip' + active + '" data-value="' + c.value + '">' + c.label + '</button>';
+  }).join('');
+  container.querySelectorAll('.chip').forEach(function(chip) {
+    chip.addEventListener('click', async function() {
+      // 更新样式
+      container.querySelectorAll('.chip').forEach(function(b) { b.classList.remove('chip--active'); });
+      chip.classList.add('chip--active');
+      // 更新筛选
+      onChange(chip.dataset.value);
+      expandedCards.clear();
+      await loadAndRender();
+    });
+  });
+}
 
-  document.getElementById('filter-mood').onchange = async (e) => { currentMood = e.target.value; expandedCards.clear(); await loadAndRender(); };
-  document.getElementById('filter-type').onchange = async (e) => { currentType = e.target.value; expandedCards.clear(); await loadAndRender(); };
+function populateFilters() {
+  // 月份
+  var now = new Date();
+  var months = [{ value: 'all', label: '全部' }];
+  for (var i = 0; i < 12; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      value: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'),
+      label: d.getMonth()+1 + '月'
+    });
+  }
+  renderChips('filter-month-chips', months, currentMonth, function(v) { currentMonth = v; });
+
+  // 心情
+  renderChips('filter-mood-chips', [
+    { value: 'all', label: '全部心情' },
+    { value: 'good', label: '😊 Nice' },
+    { value: 'neutral', label: '😌 Peace' },
+    { value: 'bad', label: '🥲 Bad' }
+  ], currentMood, function(v) { currentMood = v; });
+
+  // 类型
+  renderChips('filter-type-chips', [
+    { value: 'all', label: '全部类型' },
+    { value: 'guided', label: '你问我答' },
+    { value: 'free', label: '随记' },
+    { value: 'dream', label: '梦境' },
+    { value: 'quote', label: '语录' }
+  ], currentType, function(v) { currentType = v; });
 }
 
 async function loadAndRender() {

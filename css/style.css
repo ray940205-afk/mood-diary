@@ -951,7 +951,9 @@ input[type="date"].form-input {
   gap: var(--space-sm);
   overflow-x: auto;
   padding-bottom: var(--space-xs);
+  margin-bottom: 6px;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
 }
 
 .filter-chips::-webkit-scrollbar {

@@ -145,22 +145,9 @@
     <!-- ====== 3. 情绪笔记 ====== -->
     <main id="view-notes" class="view view--hidden">
       <div class="history-toolbar">
-        <div class="filter-row">
-          <select id="filter-month" class="filter-select"></select>
-          <select id="filter-mood" class="filter-select">
-            <option value="all">全部心情</option>
-            <option value="good">😊 Nice Mood</option>
-            <option value="neutral">😌 Peace of Mind</option>
-            <option value="bad">🥲 Bad Mood</option>
-          </select>
-          <select id="filter-type" class="filter-select">
-            <option value="all">全部类型</option>
-            <option value="guided">你问我答</option>
-            <option value="free">随记</option>
-            <option value="dream">梦境记录</option>
-            <option value="quote">收藏语录</option>
-          </select>
-        </div>
+        <div class="filter-chips" id="filter-month-chips"></div>
+        <div class="filter-chips" id="filter-mood-chips"></div>
+        <div class="filter-chips" id="filter-type-chips"></div>
       </div>
       <div class="entry-list" id="entry-list">
         <div class="empty-state" id="empty-state">
