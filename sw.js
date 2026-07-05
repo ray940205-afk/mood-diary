@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mood-diary-v4';
+const CACHE_NAME = 'mood-diary-v5';
 
 const PRECACHE_URLS = [
   '/mood-diary/',
@@ -11,8 +11,11 @@ const PRECACHE_URLS = [
   '/mood-diary/js/notes.js',
   '/mood-diary/js/manage.js',
   '/mood-diary/js/quotes.js',
-  '/mood-diary/js/knowledge.js',
-  '/mood-diary/js/utils.js'
+  '/mood-diary/js/utils.js',
+  '/mood-diary/js/user.js',
+  '/mood-diary/js/dream-entry.js',
+  '/mood-diary/js/dream-symbols.js',
+  '/mood-diary/js/github-feedback.js'
 ];
 
 self.addEventListener('install', (event) => {

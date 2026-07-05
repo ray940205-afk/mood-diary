@@ -61,7 +61,7 @@ async function checkVersion() {
           var keys = await caches.keys();
           await Promise.all(keys.map(function(k) { return caches.delete(k); }));
         }
-        location.reload(true);
+        location.reload();
       }
     }
     if (!current) localStorage.setItem('mood-diary-version', data.version);

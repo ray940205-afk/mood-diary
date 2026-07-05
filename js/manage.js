@@ -44,6 +44,41 @@ export async function renderManage() {
     showToast('主题颜色已更新 🎨');
   });
 
+  // 数据导出
+  document.getElementById('btn-export-data')?.addEventListener('click', async function() {
+    var all = await getAllEntries();
+    if (all.length === 0) { showToast('没有数据可导出'); return; }
+    var blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'aryasdiary_backup_' + today() + '.json';
+    a.click();
+    showToast('已导出 ' + all.length + ' 条记录 💾');
+  });
+
+  // 数据导入
+  document.getElementById('btn-import-data')?.addEventListener('click', function() {
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file')?.addEventListener('change', async function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    try {
+      var text = await file.text();
+      var entries = JSON.parse(text);
+      if (!Array.isArray(entries)) { showToast('文件格式错误'); return; }
+      var count = 0;
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].id && entries[i].type) {
+          await saveEntry(entries[i]);
+          count++;
+        }
+      }
+      showToast('已恢复 ' + count + ' 条记录 ✅');
+    } catch (_) { showToast('文件解析失败'); }
+    e.target.value = '';
+  });
+
   // Token 管理
   var tokenToggle = document.getElementById('token-toggle');
   if (tokenToggle) tokenToggle.addEventListener('click', function() {
@@ -160,6 +195,15 @@ function buildManageHTML(stats) {
   h += '<input type="text" id="whoami-name" class="form-input" placeholder="你的名字" maxlength="20" value="' + (getUserName() || '') + '">';
   h += '<button class="btn btn--primary btn--full" id="whoami-save" style="margin-top:8px">保存</button>';
   h += '</div></section>';
+
+  // 数据备份
+  h += '<section class="manage-section">';
+  h += '<h3 class="manage-section__title">💾 数据备份</h3>';
+  h += '<p style="font-size:12px;color:#999;margin-bottom:8px">导出日记为文件保存，换设备或更新后可恢复</p>';
+  h += '<div style="display:flex;gap:8px"><button class="btn btn--outline btn--sm" id="btn-export-data" style="flex:1">📤 导出所有数据</button>';
+  h += '<button class="btn btn--outline btn--sm" id="btn-import-data" style="flex:1">📥 恢复数据</button></div>';
+  h += '<input type="file" id="import-file" accept=".json" style="display:none">';
+  h += '</section>';
 
   // 统计
   h += '<section class="manage-section">';
